@@ -32,6 +32,7 @@ struct ContentView: View {
         .tint(AppTheme.primary(colorScheme))
         .task {
             SeedMealTemplatesService.seedIfNeeded(modelContext: modelContext)
+            SeedSchedulesService.seedIfNeeded(modelContext: modelContext)
         }
     }
 }

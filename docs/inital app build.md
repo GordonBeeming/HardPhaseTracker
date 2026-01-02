@@ -120,7 +120,7 @@ Each section below is “done” when:
 - [ ] Manual: confirm starter templates appear on fresh install
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 
@@ -144,7 +144,7 @@ Each section below is “done” when:
 - [x] UI test: delete template → removed from list
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 
@@ -154,24 +154,30 @@ Each section below is “done” when:
 - Log a meal from a template (one tap).
 - Compute fasting start time based on last logged meal.
 - Live timer display (days/hours/minutes) + phase colors.
+- Show whether the user is **inside/outside their eating window** (does not block logging).
 
 ### Build
-- [ ] Add SwiftData model for meal events:
-  - [ ] `MealLogEntry` (timestamp, template reference, optional notes)
-- [ ] Dashboard “Log Meal” button that opens a template picker/drawer
-- [ ] Tapping a template logs it immediately (confirm UI optional)
-- [ ] Fasting engine:
-  - [ ] Determine last meal timestamp
-  - [ ] Live timer since last meal
-  - [ ] Phase thresholds + visual changes (24h / 48h / 72h+)
+- [x] Add SwiftData model for meal events:
+  - [x] `MealLogEntry` (timestamp, template reference, optional notes)
+  - [x] Store meal timezone details (identifier + UTC offset)
+- [x] Dashboard “Log Meal” button that opens a template picker/drawer
+- [x] Tapping a template logs it immediately (confirm UI optional)
+- [x] Fasting engine:
+  - [x] Determine last meal timestamp
+  - [x] Live timer since last meal
+  - [x] Phase thresholds + visual changes (24h / 48h / 72h+)
+- [x] Eating window schedules:
+  - [x] Seed common templates (including Gordon 4:3)
+  - [x] Evaluate schedule using current device timezone
+  - [x] Display in/out of window on Dashboard
 
 ### Test
-- [ ] Unit tests: fasting duration calculation given meal timestamps
+- [x] Unit tests: fasting duration calculation given meal timestamps
 - [ ] Manual: log meal → timer resets
 - [ ] Manual: advance time (debug) / simulate older meal → phase color shifts
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 

@@ -15,6 +15,8 @@ struct HardPhaseTrackerApp: App {
             MealTemplate.self,
             MealComponent.self,
             MealLogEntry.self,
+            EatingWindowSchedule.self,
+            AppSettings.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
