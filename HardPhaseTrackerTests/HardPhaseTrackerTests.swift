@@ -6,6 +6,7 @@
 //
 
 import Testing
+@testable import HardPhaseTracker
 
 struct HardPhaseTrackerTests {
     @Test func placeholder() async throws {

@@ -19,6 +19,11 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "drop")
                 }
 
+            LogView()
+                .tabItem {
+                    Label("Log", systemImage: "calendar")
+                }
+
             MealsView()
                 .tabItem {
                     Label("Meals", systemImage: "fork.knife")
@@ -31,7 +36,6 @@ struct ContentView: View {
         }
         .tint(AppTheme.primary(colorScheme))
         .task {
-            SeedMealTemplatesService.seedIfNeeded(modelContext: modelContext)
             SeedSchedulesService.seedIfNeeded(modelContext: modelContext)
         }
     }

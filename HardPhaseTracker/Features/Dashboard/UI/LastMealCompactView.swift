@@ -1,8 +1,6 @@
 import SwiftUI
 
-struct FastingTimerView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
+struct LastMealCompactView: View {
     let lastMeal: MealLogEntry?
     let settings: AppSettings?
 
@@ -11,15 +9,14 @@ struct FastingTimerView: View {
             if let lastMeal {
                 TimelineView(.periodic(from: .now, by: 60)) { context in
                     let elapsed = FastingEngine.elapsed(from: lastMeal.timestamp, to: context.date)
-                    let phase = FastingEngine.phase(for: elapsed)
 
-                    VStack(spacing: 8) {
-                        Text(formatted(elapsed: elapsed))
-                            .font(.system(size: 44, weight: .semibold, design: .rounded))
-                            .foregroundStyle(phase.color(using: AppTheme.self, scheme: colorScheme))
-
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Since last meal")
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
+
+                        Text(formatted(elapsed: elapsed))
+                            .font(.headline.weight(.semibold))
 
                         Text(
                             DateFormatting.formatMealTime(
@@ -30,21 +27,16 @@ struct FastingTimerView: View {
                                 offsetStyle: .utc
                             )
                         )
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     }
                 }
-            } else {
-                ContentUnavailableView("No meals logged", systemImage: "timer")
             }
         }
+        .padding(.horizontal)
     }
 
     private func formatted(elapsed: TimeInterval) -> String {
         DateFormatting.formatDurationShort(seconds: elapsed, maxUnits: 2)
     }
-}
-
-#Preview {
-    FastingTimerView(lastMeal: nil, settings: nil)
 }

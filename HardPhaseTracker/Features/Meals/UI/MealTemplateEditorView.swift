@@ -5,7 +5,12 @@ struct MealTemplateEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
+    @Query private var settings: [AppSettings]
+
     let templateToEdit: MealTemplate?
+
+    @State private var showUsedConfirm = false
+    @State private var usedCount: Int = 0
 
     @State private var name: String
     @State private var protein: String
@@ -21,7 +26,7 @@ struct MealTemplateEditorView: View {
         _carbs = State(initialValue: template.map { String($0.carbs) } ?? "")
         _fats = State(initialValue: template.map { String($0.fats) } ?? "")
         _components = State(initialValue: template?.components.map {
-            ComponentDraft(name: $0.name, grams: String($0.grams))
+            ComponentDraft(name: $0.name, grams: String($0.grams), unit: $0.unit ?? "g")
         } ?? [])
     }
 
@@ -47,17 +52,39 @@ struct MealTemplateEditorView: View {
 
                 Section("Components") {
                     ForEach($components) { $component in
-                        HStack {
-                            TextField("Name", text: $component.name)
-                            TextField("g", text: $component.grams)
+                        HStack(spacing: 10) {
+                            HStack(spacing: 6) {
+                                TextField("Name", text: $component.name)
+
+                                Menu {
+                                    ForEach(componentNameSuggestions, id: \.self) { name in
+                                        Button(name) { component.name = name }
+                                    }
+                                } label: {
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .accessibilityLabel("Choose existing component")
+                            }
+
+                            TextField("Amount", text: $component.grams)
                                 .keyboardType(.decimalPad)
                                 .frame(width: 80)
+
+                            Picker("Unit", selection: $component.unit) {
+                                ForEach(FoodUnit.ordered(for: preferredUnitSystem)) { u in
+                                    Text(u.label).tag(u.rawValue)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 110)
                         }
                     }
                     .onDelete(perform: deleteComponents)
 
                     Button("Add Component") {
-                        components.append(ComponentDraft(name: "", grams: ""))
+                        let unit = FoodUnit.defaultUnit(for: preferredUnitSystem)
+                        components.append(ComponentDraft(name: "", grams: "", unit: unit.rawValue))
                     }
                     .accessibilityIdentifier("mealEditor.addComponent")
                 }
@@ -69,7 +96,16 @@ struct MealTemplateEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        save()
+                        if let templateToEdit {
+                            let all = (try? modelContext.fetch(FetchDescriptor<MealLogEntry>())) ?? []
+                            usedCount = all.filter { $0.template === templateToEdit }.count
+                            if usedCount > 0 {
+                                showUsedConfirm = true
+                                return
+                            }
+                        }
+
+                        saveUpdatingExisting()
                         dismiss()
                     }
                     .accessibilityIdentifier("mealEditor.save")
@@ -77,13 +113,42 @@ struct MealTemplateEditorView: View {
                 }
             }
         }
+        .confirmationDialog(
+            "This meal is used in \(usedCount) logged meal(s)",
+            isPresented: $showUsedConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Update existing logged meals") {
+                saveUpdatingExisting()
+                dismiss()
+            }
+
+            Button("Only apply to new meals") {
+                saveAsNewTemplate()
+                dismiss()
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Choose whether edits should affect already-logged meals or only future meals.")
+        }
+    }
+
+    private var preferredUnitSystem: UnitSystem {
+        settings.first?.unitSystemEnum ?? .metric
+    }
+
+    private var componentNameSuggestions: [String] {
+        let all = (try? modelContext.fetch(FetchDescriptor<MealComponent>())) ?? []
+        let set = Set(all.map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })
+        return set.sorted()
     }
 
     private func deleteComponents(at offsets: IndexSet) {
         components.remove(atOffsets: offsets)
     }
 
-    private func save() {
+    private func saveUpdatingExisting() {
         let parsedProtein = Double(protein) ?? 0
         let parsedCarbs = Double(carbs) ?? 0
         let parsedFats = Double(fats) ?? 0
@@ -97,7 +162,7 @@ struct MealTemplateEditorView: View {
             templateToEdit.components.forEach { modelContext.delete($0) }
             templateToEdit.components = components
                 .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0) }
+                .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }
         } else {
             let template = MealTemplate(
                 name: name,
@@ -106,11 +171,29 @@ struct MealTemplateEditorView: View {
                 fats: parsedFats,
                 components: components
                     .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                    .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0) }
+                    .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }
             )
             modelContext.insert(template)
         }
 
+        try? modelContext.save()
+    }
+
+    private func saveAsNewTemplate() {
+        let parsedProtein = Double(protein) ?? 0
+        let parsedCarbs = Double(carbs) ?? 0
+        let parsedFats = Double(fats) ?? 0
+
+        let template = MealTemplate(
+            name: name,
+            protein: parsedProtein,
+            carbs: parsedCarbs,
+            fats: parsedFats,
+            components: components
+                .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }
+        )
+        modelContext.insert(template)
         try? modelContext.save()
     }
 }
@@ -119,6 +202,7 @@ private struct ComponentDraft: Identifiable {
     let id = UUID()
     var name: String
     var grams: String
+    var unit: String
 }
 
 #Preview {

@@ -33,6 +33,12 @@ Ask me if you have any questions before you start. Ask each question one at a ti
 - Use **XCUITest** (`HardPhaseTrackerUITests`) for critical end-to-end flows (smoke tests).
 - Design for testability: use dependency injection (e.g., `Clock`/time provider, `HealthKitClient` protocol) so logic can be tested without real HealthKit.
 
+## User action callouts (IMPORTANT)
+
+- Whenever the user needs to do something manually (re-run, reset simulator/app data, etc.), prefix the message with **🚨🚨🚨**.
+- Example: if we make a SwiftData schema change that can’t migrate cleanly (e.g., adding a new *non-optional* property), call it out explicitly:
+  - **🚨🚨🚨 Action required:** delete the app from the Simulator (or erase simulator content) to clear the SwiftData store, then re-run.
+
 ## Device support (IMPORTANT)
 
 - Target **both iPhone and iPad**: verify layouts in compact + regular size classes.

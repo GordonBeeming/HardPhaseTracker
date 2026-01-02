@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import HardPhaseTracker
 
 struct EatingWindowEvaluatorTests {
     @Test func detectsInWindowForActiveDay() async throws {

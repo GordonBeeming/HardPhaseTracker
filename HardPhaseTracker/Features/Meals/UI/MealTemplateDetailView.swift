@@ -21,7 +21,8 @@ struct MealTemplateDetailView: View {
                         HStack {
                             Text(component.name)
                             Spacer()
-                            Text("\(component.grams, specifier: \"%.0f\")g")
+                            let unit = component.unit ?? "g"
+                            Text("\(component.grams, specifier: "%.0f") \(unit)")
                                 .foregroundStyle(.secondary)
                         }
                     }

@@ -5,6 +5,7 @@
 //  Created by Gordon Beeming on 2/1/2026.
 //
 
+import Foundation
 import SwiftUI
 import SwiftData
 
@@ -18,7 +19,12 @@ struct HardPhaseTrackerApp: App {
             EatingWindowSchedule.self,
             AppSettings.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
+
+        let storeURL = appSupport.appendingPathComponent("default.store")
+        let modelConfiguration = ModelConfiguration(schema: schema, url: storeURL)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])

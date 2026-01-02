@@ -14,17 +14,22 @@ final class HardPhaseTrackerUITests: XCTestCase {
     }
 
     @MainActor
-    func testAppHasThreePrimaryTabs() throws {
+    func testAppHasFourPrimaryTabs() throws {
         let app = XCUIApplication()
         app.launch()
 
         let dashboard = app.buttons["Dashboard"]
+        let log = app.buttons["Log"]
         let meals = app.buttons["Meals"]
         let analysis = app.buttons["Analysis"]
 
         XCTAssertTrue(dashboard.waitForExistence(timeout: 2))
+        XCTAssertTrue(log.exists)
         XCTAssertTrue(meals.exists)
         XCTAssertTrue(analysis.exists)
+
+        log.tap()
+        XCTAssertTrue(app.navigationBars["Log"].waitForExistence(timeout: 2))
 
         meals.tap()
         XCTAssertTrue(app.navigationBars["Meals"].waitForExistence(timeout: 2))

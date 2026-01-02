@@ -3,28 +3,44 @@ import SwiftData
 
 struct MealQuickLogView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
 
     @Query(sort: [SortDescriptor(\MealTemplate.name)])
     private var templates: [MealTemplate]
 
-    @State private var customTimeTemplate: MealTemplate?
+    let defaultTimestamp: Date
+    let onLogged: (() -> Void)?
+
+    @State private var selectedTemplate: MealTemplate?
+
+    init(defaultTimestamp: Date = .now, onLogged: (() -> Void)? = nil) {
+        self.defaultTimestamp = defaultTimestamp
+        self.onLogged = onLogged
+    }
+
+    private func didLog() {
+        selectedTemplate = nil
+        onLogged?()
+        dismiss()
+    }
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(templates) { template in
-                    Button {
-                        MealLogService.logMeal(template: template, at: .now, modelContext: modelContext)
-                        dismiss()
-                    } label: {
-                        Text(template.name)
-                    }
-                    .swipeActions {
-                        Button("Time…") {
-                            customTimeTemplate = template
+            Group {
+                if templates.isEmpty {
+                    ContentUnavailableView(
+                        "No meals created",
+                        systemImage: "fork.knife",
+                        description: Text("Create meals in the Meals tab, then come back here to log them.")
+                    )
+                } else {
+                    List {
+                        ForEach(templates) { template in
+                            Button {
+                                selectedTemplate = template
+                            } label: {
+                                Text(template.name)
+                            }
                         }
-                        .tint(.blue)
                     }
                 }
             }
@@ -34,8 +50,12 @@ struct MealQuickLogView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .sheet(item: $customTimeTemplate) { template in
-                MealLogWithTimeView(template: template)
+            .sheet(item: $selectedTemplate) { template in
+                MealLogWithTimeView(
+                    template: template,
+                    defaultTimestamp: defaultTimestamp,
+                    onLogged: didLog
+                )
             }
         }
     }
@@ -46,12 +66,20 @@ private struct MealLogWithTimeView: View {
     @Environment(\.modelContext) private var modelContext
 
     let template: MealTemplate
-    @State private var timestamp: Date = .now
+    let onLogged: (() -> Void)?
+
+    @State private var timestamp: Date
+
+    init(template: MealTemplate, defaultTimestamp: Date, onLogged: (() -> Void)? = nil) {
+        self.template = template
+        self.onLogged = onLogged
+        _timestamp = State(initialValue: defaultTimestamp)
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                DatePicker("Meal time", selection: $timestamp)
+                DatePicker("Meal time", selection: $timestamp, displayedComponents: [.date, .hourAndMinute])
             }
             .navigationTitle(template.name)
             .toolbar {
@@ -62,6 +90,7 @@ private struct MealLogWithTimeView: View {
                     Button("Log") {
                         MealLogService.logMeal(template: template, at: timestamp, modelContext: modelContext)
                         dismiss()
+                        onLogged?()
                     }
                 }
             }

@@ -7,19 +7,23 @@ final class MealLogEntry {
     var timeZoneIdentifier: String
     var utcOffsetSeconds: Int
 
+    @Relationship
     var template: MealTemplate?
     var notes: String?
 
     init(
         timestamp: Date = Date(),
         timeZoneIdentifier: String = TimeZone.current.identifier,
-        utcOffsetSeconds: Int = TimeZone.current.secondsFromGMT(for: timestamp),
+        utcOffsetSeconds: Int? = nil,
         template: MealTemplate?,
         notes: String? = nil
     ) {
         self.timestamp = timestamp
         self.timeZoneIdentifier = timeZoneIdentifier
-        self.utcOffsetSeconds = utcOffsetSeconds
+
+        let tz = TimeZone(identifier: timeZoneIdentifier) ?? .current
+        self.utcOffsetSeconds = utcOffsetSeconds ?? tz.secondsFromGMT(for: timestamp)
+
         self.template = template
         self.notes = notes
     }

@@ -7,12 +7,14 @@ final class EatingWindowSchedule {
     var startMinutes: Int
     var endMinutes: Int
     var weekdayMask: Int
+    var isBuiltIn: Bool
 
-    init(name: String, startMinutes: Int, endMinutes: Int, weekdayMask: Int) {
+    init(name: String, startMinutes: Int, endMinutes: Int, weekdayMask: Int, isBuiltIn: Bool = false) {
         self.name = name
         self.startMinutes = startMinutes
         self.endMinutes = endMinutes
         self.weekdayMask = weekdayMask
+        self.isBuiltIn = isBuiltIn
     }
 }
 

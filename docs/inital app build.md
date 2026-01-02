@@ -110,14 +110,12 @@ Each section below is “done” when:
   - [x] `MealTemplate` (name, macros totals)
   - [x] `MealComponent` (name, grams)
   - [x] Relationship: template → components
-- [x] Seed Gordon’s starter templates on first launch:
-  - [x] Thursday Lunch
-  - [x] Sunday Dinner
+- [x] Do **not** seed personal meal templates (start empty)
 - [x] Add migrations/compat strategy (at least: handle fresh install + future changes)
 
 ### Test
 - [x] Unit tests: creating/saving/loading templates (in-memory SwiftData container)
-- [ ] Manual: confirm starter templates appear on fresh install
+- [ ] Manual: confirm Meals starts empty on fresh install
 
 ### Publish
 - [x] Squash merge to `main`
@@ -167,7 +165,8 @@ Each section below is “done” when:
   - [x] Live timer since last meal
   - [x] Phase thresholds + visual changes (24h / 48h / 72h+)
 - [x] Eating window schedules:
-  - [x] Seed common templates (including Gordon 4:3)
+  - [x] Seed common templates
+  - [x] Add custom schedule creation
   - [x] Evaluate schedule using current device timezone
   - [x] Display in/out of window on Dashboard
 

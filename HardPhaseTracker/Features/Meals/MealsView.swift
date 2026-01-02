@@ -11,15 +11,25 @@ struct MealsView: View {
 
     var body: some View {
         NavigationSplitView {
-            List {
-                ForEach(templates) { template in
-                    NavigationLink {
-                        MealTemplateDetailView(template: template)
-                    } label: {
-                        Text(template.name)
+            Group {
+                if templates.isEmpty {
+                    ContentUnavailableView(
+                        "No meals yet",
+                        systemImage: "fork.knife",
+                        description: Text("Create your first meal template.")
+                    )
+                } else {
+                    List {
+                        ForEach(templates) { template in
+                            NavigationLink {
+                                MealTemplateDetailView(template: template)
+                            } label: {
+                                Text(template.name)
+                            }
+                        }
+                        .onDelete(perform: deleteTemplates)
                     }
                 }
-                .onDelete(perform: deleteTemplates)
             }
             .navigationTitle("Meals")
             .toolbar {

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import HardPhaseTracker
 
 struct FastingEngineTests {
     @Test func computesElapsedAndPhase() async throws {

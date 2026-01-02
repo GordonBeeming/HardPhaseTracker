@@ -1,5 +1,6 @@
 import SwiftData
 import Testing
+@testable import HardPhaseTracker
 
 struct MealTemplatePersistenceTests {
     @Test func canCreateAndFetchTemplates() async throws {

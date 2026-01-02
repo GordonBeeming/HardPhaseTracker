@@ -10,24 +10,61 @@ struct SchedulePickerView: View {
 
     @Query private var settings: [AppSettings]
 
+    @State private var isAddingCustom = false
+    @State private var editingSchedule: EatingWindowSchedule?
+    @State private var showInUseDeleteAlert = false
+
     var body: some View {
         NavigationStack {
             List {
-                ForEach(schedules) { schedule in
+                Section {
                     Button {
-                        select(schedule)
-                        dismiss()
+                        isAddingCustom = true
                     } label: {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(schedule.name)
-                                Text(EatingWindowEvaluator.windowText(schedule: schedule))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                        Label("Add custom schedule", systemImage: "plus")
+                    }
+                }
+
+                Section {
+                    let custom = schedules.filter { !$0.isBuiltIn }
+                    let builtIn = schedules.filter { $0.isBuiltIn }
+
+                    ForEach(custom + builtIn) { schedule in
+                        Button {
+                            select(schedule)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(schedule.name)
+                                    Text(EatingWindowEvaluator.windowText(schedule: schedule))
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if settings.first?.selectedSchedule === schedule {
+                                    Image(systemName: "checkmark")
+                                }
                             }
-                            Spacer()
-                            if settings.first?.selectedSchedule === schedule {
-                                Image(systemName: "checkmark")
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Edit") {
+                                editingSchedule = schedule
+                            }
+                            .tint(.blue)
+
+                            if schedule.isBuiltIn {
+                                // built-in; no delete
+                            } else {
+                                Button("Delete", role: .destructive) {
+                                    if settings.first?.selectedSchedule === schedule {
+                                        showInUseDeleteAlert = true
+                                        return
+                                    }
+
+                                    modelContext.delete(schedule)
+                                    try? modelContext.save()
+                                }
                             }
                         }
                     }
@@ -38,6 +75,17 @@ struct SchedulePickerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $isAddingCustom) {
+                ScheduleEditorView()
+            }
+            .sheet(item: $editingSchedule) { schedule in
+                ScheduleEditorView(schedule: schedule)
+            }
+            .alert("Schedule in use", isPresented: $showInUseDeleteAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This schedule is currently selected on the Dashboard. Switch schedules first, then delete.")
             }
         }
     }

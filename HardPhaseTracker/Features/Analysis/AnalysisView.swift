@@ -3,8 +3,12 @@ import SwiftUI
 struct AnalysisView: View {
     var body: some View {
         NavigationStack {
-            ContentUnavailableView("Analysis", systemImage: "chart.line.uptrend.xyaxis")
-                .navigationTitle("Analysis")
+            ContentUnavailableView(
+                "Coming soon",
+                systemImage: "chart.line.uptrend.xyaxis",
+                description: Text("Charts and analytics will arrive in a future milestone.")
+            )
+            .navigationTitle("Analysis")
         }
         .appScreen()
         .accessibilityIdentifier("tab.analysis")

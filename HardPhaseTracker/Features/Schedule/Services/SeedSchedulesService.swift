@@ -7,15 +7,31 @@ enum SeedSchedulesService {
     static func seedIfNeeded(modelContext: ModelContext) {
         guard !UserDefaults.standard.bool(forKey: seedKey) else { return }
 
-        let count = (try? modelContext.fetchCount(FetchDescriptor<EatingWindowSchedule>())) ?? 0
-        if count == 0 {
-            ScheduleTemplates.defaults().forEach { modelContext.insert($0) }
+        let existing = (try? modelContext.fetch(FetchDescriptor<EatingWindowSchedule>())) ?? []
+
+        // Ensure built-ins always exist (idempotent upsert by name).
+        let existingNames = Set(existing.map { $0.name })
+        for builtIn in ScheduleTemplates.defaults() where !existingNames.contains(builtIn.name) {
+            modelContext.insert(builtIn)
         }
 
-        let settingsCount = (try? modelContext.fetchCount(FetchDescriptor<AppSettings>())) ?? 0
-        if settingsCount == 0 {
-            let firstSchedule = try? modelContext.fetch(FetchDescriptor<EatingWindowSchedule>()).first
-            modelContext.insert(AppSettings(selectedSchedule: firstSchedule))
+        // Backfill built-in flag for existing installs (best-effort by name).
+        for s in existing where s.name.contains("16/8") || s.name.contains("18/6") || s.name.contains("20/4") || s.name.contains("OMAD") {
+            s.isBuiltIn = true
+        }
+
+        let currentSettings = (try? modelContext.fetch(FetchDescriptor<AppSettings>()).first)
+
+        if currentSettings == nil {
+            // First launch: force user to pick a schedule (onboarding).
+            modelContext.insert(AppSettings(selectedSchedule: nil))
+        } else {
+            // Backfill new settings fields for existing installs (migration-safe).
+            if currentSettings?.mealTimeDisplayMode == nil { currentSettings?.mealTimeDisplayMode = "captured" }
+            if currentSettings?.mealTimeZoneBadgeStyle == nil { currentSettings?.mealTimeZoneBadgeStyle = "abbrev" }
+            if currentSettings?.mealTimeOffsetStyle == nil { currentSettings?.mealTimeOffsetStyle = "utc" }
+            if currentSettings?.dashboardMealListCount == nil { currentSettings?.dashboardMealListCount = 10 }
+            if currentSettings?.unitSystem == nil { currentSettings?.unitSystem = "metric" }
         }
 
         try? modelContext.save()

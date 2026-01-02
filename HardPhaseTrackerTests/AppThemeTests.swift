@@ -1,5 +1,6 @@
 import SwiftUI
 import Testing
+@testable import HardPhaseTracker
 
 struct AppThemeTests {
     @Test func paletteMatchesSpec() async throws {
