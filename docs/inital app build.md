@@ -60,19 +60,19 @@ Each section below is “done” when:
 - Remove template/demo code (`Item`) once replaced by real models.
 
 ### Build
-- [ ] Set up root navigation (TabView or NavigationSplitView) with 3 destinations:
-  - [ ] Dashboard
-  - [ ] Meals
-  - [ ] Analysis
-- [ ] Add placeholder screens with titles and empty states
-- [ ] Add SwiftData container wiring to support upcoming models
+- [x] Set up root navigation (TabView or NavigationSplitView) with 3 destinations:
+  - [x] Dashboard
+  - [x] Meals
+  - [x] Analysis
+- [x] Add placeholder screens with titles and empty states
+- [x] Add SwiftData container wiring to support upcoming models
 
 ### Test
-- [ ] App launches without crashes
-- [ ] Can navigate between the 3 main areas
+- [x] App launches without crashes
+- [x] Can navigate between the 3 main areas
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 
