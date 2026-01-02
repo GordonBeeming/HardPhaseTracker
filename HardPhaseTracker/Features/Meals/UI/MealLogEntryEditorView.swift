@@ -28,7 +28,6 @@ struct MealLogEntryEditorView: View {
             Form {
                 Section("Meal") {
                     Picker("Template", selection: $selectedTemplate) {
-                        Text("(None)").tag(MealTemplate?.none)
                         ForEach(templates) { t in
                             Text(t.name).tag(Optional(t))
                         }
@@ -45,12 +44,18 @@ struct MealLogEntryEditorView: View {
                 }
             }
             .navigationTitle("Edit meal")
+            .onAppear {
+                if selectedTemplate == nil {
+                    selectedTemplate = templates.first
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        guard let selectedTemplate else { return }
                         entry.timestamp = timestamp
                         let tz = TimeZone(identifier: entry.timeZoneIdentifier) ?? .current
                         entry.utcOffsetSeconds = tz.secondsFromGMT(for: timestamp)
@@ -59,6 +64,7 @@ struct MealLogEntryEditorView: View {
                         try? modelContext.save()
                         dismiss()
                     }
+                    .disabled(selectedTemplate == nil)
                 }
             }
         }

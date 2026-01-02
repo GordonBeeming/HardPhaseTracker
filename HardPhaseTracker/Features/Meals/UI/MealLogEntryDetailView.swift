@@ -1,15 +1,10 @@
 import SwiftUI
-import SwiftData
 
 struct MealLogEntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
 
     let entry: MealLogEntry
     let settings: AppSettings?
-
-    @State private var isEditing = false
-    @State private var showDeleteConfirm = false
 
     var body: some View {
         Form {
@@ -27,14 +22,20 @@ struct MealLogEntryDetailView: View {
 
             if let template = entry.template {
                 Section("Meal") {
-                    NavigationLink(template.name) {
-                        MealTemplateDetailView(template: template)
-                            .navigationTitle(template.name)
-                    }
+                    Text(template.name)
                 }
 
-                if !template.components.isEmpty {
-                    Section("Components") {
+                Section("Macros") {
+                    LabeledContent("Protein", value: String(template.protein))
+                    LabeledContent("Carbs", value: String(template.carbs))
+                    LabeledContent("Fats", value: String(template.fats))
+                }
+
+                Section("Components") {
+                    if template.components.isEmpty {
+                        Text("No components")
+                            .foregroundStyle(.secondary)
+                    } else {
                         ForEach(template.components) { c in
                             HStack {
                                 Text(c.name)
@@ -53,33 +54,13 @@ struct MealLogEntryDetailView: View {
                     Text(notes)
                 }
             }
-
-            Section {
-                Button("Delete meal", role: .destructive) {
-                    showDeleteConfirm = true
-                }
-            }
         }
         .navigationTitle("Meal")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Edit") { isEditing = true }
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close") { dismiss() }
             }
-        }
-        .confirmationDialog(
-            "Delete this meal?",
-            isPresented: $showDeleteConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                modelContext.delete(entry)
-                try? modelContext.save()
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) {}
-        }
-        .sheet(isPresented: $isEditing) {
-            MealLogEntryEditorView(entry: entry)
         }
     }
 }

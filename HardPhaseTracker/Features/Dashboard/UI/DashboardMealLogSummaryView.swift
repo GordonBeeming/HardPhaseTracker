@@ -9,6 +9,8 @@ struct DashboardMealLogSummaryView: View {
 
     @State private var editingEntry: MealLogEntry?
     @State private var detailEntry: MealLogEntry?
+    @State private var actionsEntry: MealLogEntry?
+    @State private var isShowingActions = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -25,29 +27,29 @@ struct DashboardMealLogSummaryView: View {
                     .padding(.top, 6)
 
                 ForEach(group.entries) { entry in
-                    Button {
-                        detailEntry = entry
-                    } label: {
-                        HStack {
-                            Text(entry.template?.name ?? "Meal")
-                            Spacer()
-                            Text(timeText(for: entry))
-                                .foregroundStyle(.secondary)
-
-                            Menu {
-                                Button("Edit") { editingEntry = entry }
-                                Button("Delete", role: .destructive) {
-                                    modelContext.delete(entry)
-                                    try? modelContext.save()
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis")
+                    HStack {
+                        Button {
+                            detailEntry = entry
+                        } label: {
+                            HStack {
+                                Text(entry.template?.name ?? "Meal")
+                                Spacer()
+                                Text(timeText(for: entry))
                                     .foregroundStyle(.secondary)
-                                    .padding(.leading, 4)
                             }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            actionsEntry = entry
+                            isShowingActions = true
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 4)
                         }
                     }
-                    .buttonStyle(.plain)
                     Divider()
                 }
             }
@@ -65,6 +67,18 @@ struct DashboardMealLogSummaryView: View {
             NavigationStack {
                 MealLogEntryDetailView(entry: entry, settings: settings)
             }
+        }
+        .confirmationDialog("Meal actions", isPresented: $isShowingActions, presenting: actionsEntry) { entry in
+            Button("Edit") { editingEntry = entry }
+            Button("Delete", role: .destructive) {
+                modelContext.delete(entry)
+                try? modelContext.save()
+            }
+            Button("Cancel", role: .cancel) {
+                actionsEntry = nil
+            }
+        } message: { _ in
+            EmptyView()
         }
     }
 

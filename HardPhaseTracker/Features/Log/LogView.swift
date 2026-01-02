@@ -19,6 +19,7 @@ struct LogView: View {
                 MealLogListView(entries: logsForSelectedDate, selectedDate: selectedDate, settings: settings.first)
             }
             .navigationTitle("Log")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {

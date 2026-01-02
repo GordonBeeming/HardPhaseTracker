@@ -69,6 +69,7 @@ private struct MealLogWithTimeView: View {
     let onLogged: (() -> Void)?
 
     @State private var timestamp: Date
+    @State private var notes: String = ""
 
     init(template: MealTemplate, defaultTimestamp: Date, onLogged: (() -> Void)? = nil) {
         self.template = template
@@ -79,7 +80,13 @@ private struct MealLogWithTimeView: View {
     var body: some View {
         NavigationStack {
             Form {
-                DatePicker("Meal time", selection: $timestamp, displayedComponents: [.date, .hourAndMinute])
+                Section("Time") {
+                    DatePicker("Meal time", selection: $timestamp, displayedComponents: [.date, .hourAndMinute])
+                }
+
+                Section("Notes") {
+                    TextField("Optional notes", text: $notes, axis: .vertical)
+                }
             }
             .navigationTitle(template.name)
             .toolbar {
@@ -88,7 +95,13 @@ private struct MealLogWithTimeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
-                        MealLogService.logMeal(template: template, at: timestamp, modelContext: modelContext)
+                        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                        MealLogService.logMeal(
+                            template: template,
+                            at: timestamp,
+                            notes: trimmed.isEmpty ? nil : trimmed,
+                            modelContext: modelContext
+                        )
                         dismiss()
                         onLogged?()
                     }

@@ -35,21 +35,17 @@ struct MealLogListView: View {
                                         Spacer()
                                         Text(timeText(for: entry))
                                             .foregroundStyle(.secondary)
-
-                                        Menu {
-                                            Button("Edit") { editingEntry = entry }
-                                            Button("Delete", role: .destructive) {
-                                                modelContext.delete(entry)
-                                                try? modelContext.save()
-                                            }
-                                        } label: {
-                                            Image(systemName: "ellipsis")
-                                                .foregroundStyle(.secondary)
-                                                .padding(.leading, 4)
-                                        }
                                     }
+                                    .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button("Edit") { editingEntry = entry }
+                                    Button("Delete", role: .destructive) {
+                                        modelContext.delete(entry)
+                                        try? modelContext.save()
+                                    }
+                                }
                             }
                         }
                     }

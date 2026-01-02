@@ -57,8 +57,10 @@ struct MealTemplateEditorView: View {
                                 TextField("Name", text: $component.name)
 
                                 Menu {
-                                    ForEach(componentNameSuggestions, id: \.self) { name in
-                                        Button(name) { component.name = name }
+                                    ForEach(componentNameSuggestions, id: \.self) { suggestion in
+                                        Button(suggestion) {
+                                            $component.name.wrappedValue = suggestion
+                                        }
                                     }
                                 } label: {
                                     Image(systemName: "chevron.up.chevron.down")
@@ -71,13 +73,23 @@ struct MealTemplateEditorView: View {
                                 .keyboardType(.decimalPad)
                                 .frame(width: 80)
 
-                            Picker("Unit", selection: $component.unit) {
+                            Menu {
                                 ForEach(FoodUnit.ordered(for: preferredUnitSystem)) { u in
-                                    Text(u.label).tag(u.rawValue)
+                                    Button(u.label) {
+                                        $component.unit.wrappedValue = u.rawValue
+                                    }
                                 }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    let unit = $component.unit.wrappedValue
+                                    Text(FoodUnit(rawValue: unit)?.label ?? unit)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: 110, alignment: .trailing)
                             }
-                            .labelsHidden()
-                            .frame(maxWidth: 110)
+                            .accessibilityLabel("Unit")
                         }
                     }
                     .onDelete(perform: deleteComponents)

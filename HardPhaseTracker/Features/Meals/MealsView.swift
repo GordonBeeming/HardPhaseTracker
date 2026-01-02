@@ -32,6 +32,7 @@ struct MealsView: View {
                 }
             }
             .navigationTitle("Meals")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {

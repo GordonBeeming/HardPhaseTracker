@@ -9,6 +9,7 @@ struct AnalysisView: View {
                 description: Text("Charts and analytics will arrive in a future milestone.")
             )
             .navigationTitle("Analysis")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .appScreen()
         .accessibilityIdentifier("tab.analysis")

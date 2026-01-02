@@ -10,26 +10,9 @@ struct LastMealCompactView: View {
                 TimelineView(.periodic(from: .now, by: 60)) { context in
                     let elapsed = FastingEngine.elapsed(from: lastMeal.timestamp, to: context.date)
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Since last meal")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-
-                        Text(formatted(elapsed: elapsed))
-                            .font(.headline.weight(.semibold))
-
-                        Text(
-                            DateFormatting.formatMealTime(
-                                date: lastMeal.timestamp,
-                                capturedTimeZoneIdentifier: lastMeal.timeZoneIdentifier,
-                                displayMode: settings?.mealTimeDisplayModeEnum ?? .captured,
-                                badgeStyle: .abbrev,
-                                offsetStyle: .utc
-                            )
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    }
+                    Text("\(formatted(elapsed: elapsed)) since last meal")
+                        .font(.headline)
+                        .lineLimit(1)
                 }
             }
         }

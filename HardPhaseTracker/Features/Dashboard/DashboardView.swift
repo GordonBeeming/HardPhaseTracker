@@ -99,9 +99,6 @@ struct DashboardView: View {
                     }
                 }
 
-                if lastMeal != nil {
-                    LastMealCompactView(lastMeal: lastMeal, settings: appSettings)
-                }
 
                 if (appSettings?.dashboardMealListCount ?? 10) > 0 {
                     let count = appSettings?.dashboardMealListCount ?? 10
@@ -115,6 +112,7 @@ struct DashboardView: View {
             }
             .padding(.top, 16)
             .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
