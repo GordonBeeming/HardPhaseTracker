@@ -15,6 +15,8 @@
   - `Resources/` (Assets, Info.plist, entitlements)
 
 ## Coding guidelines
+- Prefer **Vertical Slice Architecture**: group code by feature (UI + state + services) under `HardPhaseTracker/Features/<FeatureName>/...`.
+- Keep files small and reviewable; avoid “god views” and large, multi-purpose types.
 - Prefer small, composable SwiftUI views; keep view models/services testable.
 - Keep iPhone/iPad layouts adaptive (size classes, dynamic type) rather than branching per device unless necessary.
 - Don’t build future features from the requirements doc unless explicitly asked.

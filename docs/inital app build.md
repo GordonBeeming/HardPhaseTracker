@@ -29,6 +29,7 @@ Suggested branch naming:
 Each section below is “done” when:
 - ✅ Works on **iPhone and iPad** (at minimum: compact + regular size classes)
 - ✅ Looks native/responsive (no clipped UI, sensible spacing, supports rotation where applicable)
+- ✅ Code is structured as **Vertical Slice Architecture** (feature folders), with small reviewable files
 - ✅ Tests added/updated:
   - Logic: **Swift Testing** (`HardPhaseTrackerTests`) where feasible
   - Critical flows: **XCUITest** (`HardPhaseTrackerUITests`) for smoke coverage
