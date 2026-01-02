@@ -32,6 +32,7 @@ Ask me if you have any questions before you start. Ask each question one at a ti
 - Prefer **Swift Testing** (`HardPhaseTrackerTests`, `import Testing`) for pure logic (date math, aggregation, calculations).
 - Use **XCUITest** (`HardPhaseTrackerUITests`) for critical end-to-end flows (smoke tests).
 - Design for testability: use dependency injection (e.g., `Clock`/time provider, `HealthKitClient` protocol) so logic can be tested without real HealthKit.
+- I can’t reliably run iOS builds/tests from this environment; **always ask you to run tests** and report the results before we commit/merge.
 
 ## User action callouts (IMPORTANT)
 
