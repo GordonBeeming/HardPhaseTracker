@@ -1,13 +1,52 @@
 import SwiftUI
+import SwiftData
 
 struct MealsView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: [SortDescriptor(\MealTemplate.name)])
+    private var templates: [MealTemplate]
+
+    @State private var isAdding = false
+
     var body: some View {
-        NavigationStack {
-            ContentUnavailableView("Meals", systemImage: "fork.knife")
-                .navigationTitle("Meals")
+        NavigationSplitView {
+            List {
+                ForEach(templates) { template in
+                    NavigationLink {
+                        MealTemplateDetailView(template: template)
+                    } label: {
+                        Text(template.name)
+                    }
+                }
+                .onDelete(perform: deleteTemplates)
+            }
+            .navigationTitle("Meals")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAdding = true
+                    } label: {
+                        Label("Add Meal", systemImage: "plus")
+                    }
+                    .accessibilityIdentifier("meals.add")
+                }
+            }
+        } detail: {
+            ContentUnavailableView("Select a meal", systemImage: "fork.knife")
         }
         .appScreen()
+        .sheet(isPresented: $isAdding) {
+            MealTemplateEditorView()
+        }
         .accessibilityIdentifier("tab.meals")
+    }
+
+    private func deleteTemplates(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(templates[index])
+        }
+        try? modelContext.save()
     }
 }
 

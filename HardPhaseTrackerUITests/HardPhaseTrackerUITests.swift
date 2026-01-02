@@ -37,6 +37,48 @@ final class HardPhaseTrackerUITests: XCTestCase {
     }
 
     @MainActor
+    func testCanCreateEditAndDeleteMealTemplate() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.buttons["Meals"].tap()
+        XCTAssertTrue(app.navigationBars["Meals"].waitForExistence(timeout: 2))
+
+        app.buttons["Add Meal"].tap()
+
+        let nameField = app.textFields["mealEditor.name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.tap()
+        nameField.typeText("UITest Meal")
+
+        app.buttons["mealEditor.save"].tap()
+
+        XCTAssertTrue(app.staticTexts["UITest Meal"].waitForExistence(timeout: 2))
+        app.staticTexts["UITest Meal"].tap()
+
+        XCTAssertTrue(app.buttons["mealDetail.edit"].waitForExistence(timeout: 2))
+        app.buttons["mealDetail.edit"].tap()
+
+        let editNameField = app.textFields["mealEditor.name"]
+        XCTAssertTrue(editNameField.waitForExistence(timeout: 2))
+        editNameField.tap()
+        editNameField.press(forDuration: 1.0)
+        editNameField.typeText(" Edited")
+
+        app.buttons["mealEditor.save"].tap()
+        XCTAssertTrue(app.navigationBars["UITest Meal Edited"].waitForExistence(timeout: 2))
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 2))
+
+        let row = app.staticTexts["UITest Meal Edited"]
+        row.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        XCTAssertFalse(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 1))
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()

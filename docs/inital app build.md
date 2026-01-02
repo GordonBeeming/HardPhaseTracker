@@ -130,18 +130,18 @@ Each section below is “done” when:
 - Full UI for listing, adding, editing, deleting templates and their components.
 
 ### Build
-- [ ] Meal Manager list view for templates
-- [ ] “Add New Meal” flow:
-  - [ ] Name
-  - [ ] Components (name + grams)
-  - [ ] Macros totals (protein/carbs/fats) for template
-- [ ] Edit existing template
-- [ ] Delete template
+- [x] Meal Manager list view for templates
+- [x] “Add New Meal” flow:
+  - [x] Name
+  - [x] Components (name + grams)
+  - [x] Macros totals (protein/carbs/fats) for template
+- [x] Edit existing template
+- [x] Delete template
 
 ### Test
-- [ ] UI test: create template → verify appears in list
-- [ ] UI test: edit template → changes persist
-- [ ] UI test: delete template → removed from list
+- [x] UI test: create template → verify appears in list
+- [x] UI test: edit template → changes persist
+- [x] UI test: delete template → removed from list
 
 ### Publish
 - [ ] Squash merge to `main`
