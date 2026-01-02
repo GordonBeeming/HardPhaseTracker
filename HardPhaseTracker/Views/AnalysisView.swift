@@ -6,6 +6,7 @@ struct AnalysisView: View {
             ContentUnavailableView("Analysis", systemImage: "chart.line.uptrend.xyaxis")
                 .navigationTitle("Analysis")
         }
+        .appScreen()
         .accessibilityIdentifier("tab.analysis")
     }
 }

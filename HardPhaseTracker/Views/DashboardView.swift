@@ -6,6 +6,7 @@ struct DashboardView: View {
             ContentUnavailableView("Dashboard", systemImage: "drop")
                 .navigationTitle("Dashboard")
         }
+        .appScreen()
         .accessibilityIdentifier("tab.dashboard")
     }
 }

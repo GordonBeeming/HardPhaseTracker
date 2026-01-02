@@ -83,19 +83,19 @@ Each section below is “done” when:
 - Set baseline typography and reusable components.
 
 ### Build
-- [ ] Define named colors for light/dark (Asset Catalog color sets or a Theme layer)
+- [x] Define named colors for light/dark (Asset Catalog color sets or a Theme layer)
   - Background, Text, Primary, Accent, Divider
-- [ ] Apply consistent background/text colors across all primary screens
-- [ ] Add app icon + branding placeholder for “Vitality Drop” (final asset can come later)
-- [ ] Create reusable button styles for primary actions
+- [x] Apply consistent background/text colors across all primary screens
+- [x] Add app icon + branding placeholder for “Vitality Drop” (final asset can come later)
+- [x] Create reusable button styles for primary actions
 
 ### Test
-- [ ] Run in Light Mode: colors match spec
-- [ ] Run in Dark Mode: colors match spec
-- [ ] Snapshot/manual QA: no illegible text or low contrast
+- [x] Run in Light Mode: colors match spec
+- [x] Run in Dark Mode: colors match spec
+- [x] Snapshot/manual QA: no illegible text or low contrast
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 

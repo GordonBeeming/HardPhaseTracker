@@ -6,6 +6,7 @@ struct MealsView: View {
             ContentUnavailableView("Meals", systemImage: "fork.knife")
                 .navigationTitle("Meals")
         }
+        .appScreen()
         .accessibilityIdentifier("tab.meals")
     }
 }

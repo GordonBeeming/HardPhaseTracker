@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         TabView {
             DashboardView()
@@ -25,6 +27,7 @@ struct ContentView: View {
                     Label("Analysis", systemImage: "chart.line.uptrend.xyaxis")
                 }
         }
+        .tint(AppTheme.primary(colorScheme))
     }
 }
 
