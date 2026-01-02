@@ -106,17 +106,17 @@ Each section below is “done” when:
 - Implement the “Named Meals” template system (CRUD) in SwiftData.
 
 ### Build
-- [ ] Replace `Item` model with real models (minimum viable):
-  - [ ] `MealTemplate` (name, macros totals)
-  - [ ] `MealComponent` (name, grams)
-  - [ ] Relationship: template → components
-- [ ] Seed Gordon’s starter templates on first launch:
-  - Thursday Lunch
-  - Sunday Dinner
-- [ ] Add migrations/compat strategy (at least: handle fresh install + future changes)
+- [x] Replace `Item` model with real models (minimum viable):
+  - [x] `MealTemplate` (name, macros totals)
+  - [x] `MealComponent` (name, grams)
+  - [x] Relationship: template → components
+- [x] Seed Gordon’s starter templates on first launch:
+  - [x] Thursday Lunch
+  - [x] Sunday Dinner
+- [x] Add migrations/compat strategy (at least: handle fresh install + future changes)
 
 ### Test
-- [ ] Unit tests: creating/saving/loading templates (in-memory SwiftData container)
+- [x] Unit tests: creating/saving/loading templates (in-memory SwiftData container)
 - [ ] Manual: confirm starter templates appear on fresh install
 
 ### Publish

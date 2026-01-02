@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         TabView {
@@ -28,6 +30,9 @@ struct ContentView: View {
                 }
         }
         .tint(AppTheme.primary(colorScheme))
+        .task {
+            SeedMealTemplatesService.seedIfNeeded(modelContext: modelContext)
+        }
     }
 }
 

@@ -12,7 +12,9 @@ import SwiftData
 struct HardPhaseTrackerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            MealTemplate.self,
+            MealComponent.self,
+            MealLogEntry.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
