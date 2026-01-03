@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct MealsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: [SortDescriptor(\MealTemplate.name)])
@@ -18,6 +19,7 @@ struct MealsView: View {
                         systemImage: "fork.knife",
                         description: Text("Create your first meal template.")
                     )
+                    .background(AppTheme.background(colorScheme))
                 } else {
                     List {
                         ForEach(templates) { template in
@@ -33,6 +35,9 @@ struct MealsView: View {
                         }
                         .onDelete(perform: deleteTemplates)
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .background(AppTheme.background(colorScheme))
                 }
             }
             .navigationTitle("Meals")

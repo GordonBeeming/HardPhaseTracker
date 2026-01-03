@@ -7,5 +7,6 @@ struct MealCalendarView: View {
         DatePicker("", selection: $selectedDate, displayedComponents: [.date])
             .datePickerStyle(.graphical)
             .labelsHidden()
+            .frame(maxWidth: .infinity)
     }
 }

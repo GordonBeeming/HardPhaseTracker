@@ -18,7 +18,11 @@ enum AppTheme {
     }
 
     static func background(_ scheme: ColorScheme) -> Color {
-        Color(hex: scheme == .dark ? Hex.darkBackground : Hex.lightBackground)
+        Color(.systemGroupedBackground)
+    }
+
+    static func cardBackground(_ scheme: ColorScheme) -> Color {
+        Color(.systemBackground)
     }
 
     static func text(_ scheme: ColorScheme) -> Color {

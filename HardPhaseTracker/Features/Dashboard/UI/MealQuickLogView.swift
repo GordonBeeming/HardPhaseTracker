@@ -12,13 +12,15 @@ struct MealQuickLogView: View {
 
     let defaultTimestamp: Date
     let includeElectrolytes: Bool
+    let onlyElectrolytes: Bool
     let onLogged: (() -> Void)?
 
     @State private var selectedTemplate: MealTemplate?
 
-    init(defaultTimestamp: Date = .now, includeElectrolytes: Bool = false, onLogged: (() -> Void)? = nil) {
+    init(defaultTimestamp: Date = .now, includeElectrolytes: Bool = false, onlyElectrolytes: Bool = false, onLogged: (() -> Void)? = nil) {
         self.defaultTimestamp = defaultTimestamp
         self.includeElectrolytes = includeElectrolytes
+        self.onlyElectrolytes = onlyElectrolytes
         self.onLogged = onLogged
 
         let day = Calendar.current.startOfDay(for: defaultTimestamp)
@@ -32,7 +34,11 @@ struct MealQuickLogView: View {
     }
 
     private var visibleTemplates: [MealTemplate] {
-        includeElectrolytes ? templates : templates.filter { $0.kind != MealTemplateKind.electrolyte.rawValue }
+        if onlyElectrolytes {
+            return templates.filter { $0.kind == MealTemplateKind.electrolyte.rawValue }
+        }
+
+        return includeElectrolytes ? templates : templates.filter { $0.kind != MealTemplateKind.electrolyte.rawValue }
     }
 
     private func logElectrolyte(template: MealTemplate) {
@@ -52,11 +58,19 @@ struct MealQuickLogView: View {
         NavigationStack {
             Group {
                 if visibleTemplates.isEmpty {
-                    ContentUnavailableView(
-                        "No meals created",
-                        systemImage: "fork.knife",
-                        description: Text("Create meals in the Meals tab, then come back here to log them.")
-                    )
+                    if onlyElectrolytes {
+                        ContentUnavailableView(
+                            "No electrolytes created",
+                            systemImage: "drop.fill",
+                            description: Text("Create an electrolyte template in the Meals tab (enable ‘Use as electrolyte’), then come back here to log it.")
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "No meals created",
+                            systemImage: "fork.knife",
+                            description: Text("Create meals in the Meals tab, then come back here to log them.")
+                        )
+                    }
                 } else {
                     List {
                         ForEach(visibleTemplates) { template in
@@ -82,7 +96,7 @@ struct MealQuickLogView: View {
                     }
                 }
             }
-            .navigationTitle("Log Meal")
+            .navigationTitle(onlyElectrolytes ? "Log Sodii" : "Log Meal")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

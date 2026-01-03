@@ -3,6 +3,7 @@ import SwiftData
 
 struct DashboardMealLogSummaryView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     let entries: [MealLogEntry]
     let settings: AppSettings?
@@ -62,7 +63,7 @@ struct DashboardMealLogSummaryView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.secondary.opacity(0.06))
+                .fill(AppTheme.cardBackground(colorScheme))
         )
         .padding(.horizontal)
         .sheet(item: $editingEntry) { entry in

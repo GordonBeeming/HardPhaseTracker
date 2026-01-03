@@ -245,11 +245,11 @@ Each section below is “done” when:
 ### Build
 - [ ] “Vitality Drop” branded fasting timer as primary visual
 - [ ] Quick actions: Log Meal + Log Sodii
-- [ ] Weight trend graph (last 7 days)
-- [ ] Display latest weight (and optionally body fat %)
+- [x] Weight trend graph (last 7 days)
+- [x] Display latest weight (and optionally body fat %)
 
 ### Test
-- [ ] UI test: Dashboard renders and quick actions present
+- [x] UI test: Dashboard renders and key cards present
 - [ ] Manual: graph shows data when available; empty state when not
 
 ### Publish

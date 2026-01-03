@@ -84,6 +84,14 @@ final class HardPhaseTrackerUITests: XCTestCase {
     }
 
     @MainActor
+    func testDashboardShowsWeightCard() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        XCTAssertTrue(app.otherElements["dashboard.weightTrend"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AnalysisView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var health = HealthKitViewModel()
 
     var body: some View {
@@ -77,6 +78,9 @@ struct AnalysisView: View {
             }
             .navigationTitle("Analysis")
             .navigationBarTitleDisplayMode(.inline)
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.background(colorScheme))
             .task {
                 // Prefer cached data for fast load; only hit HealthKit when cache is empty/stale.
                 await health.refreshIfCacheStale()

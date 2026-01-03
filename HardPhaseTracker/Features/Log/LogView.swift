@@ -12,11 +12,16 @@ struct LogView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                MealCalendarView(selectedDate: $selectedDate)
-                    .padding(.horizontal)
-
-                MealLogListView(entries: logsForSelectedDate, selectedDate: selectedDate, settings: settings.first)
+            MealLogListView(entries: logsForSelectedDate, selectedDate: selectedDate, settings: settings.first) {
+                AnyView(
+                    MealCalendarView(selectedDate: $selectedDate)
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color(.systemBackground))
+                        )
+                )
             }
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)

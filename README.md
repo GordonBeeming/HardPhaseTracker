@@ -17,8 +17,10 @@ A minimalist fasting tracker for iPhone + iPad.
   - Pick an explicit meal date/time (defaults to “now”)
   - Timezone is captured with each meal
 - **Dashboard**
+  - Weight trend graph (last 7 days) + latest weight (when connected to Apple Health)
   - “Get started” onboarding when no eating window is selected
   - Shows inside/outside eating window state
+  - Shows electrolyte checklist (optional)
   - Shows recent meals (configurable count)
 - **Log tab**
   - Calendar + list grouped by day
@@ -29,8 +31,6 @@ A minimalist fasting tracker for iPhone + iPad.
 
 ## Not implemented yet (planned)
 
-- HealthKit sync (weight / body fat / sleep)
-- Electrolyte / sodium tracker
 - Advanced analysis and charts (coming soon)
 
 ## Roadmap
