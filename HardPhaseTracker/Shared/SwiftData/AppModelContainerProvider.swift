@@ -32,7 +32,21 @@ enum AppModelContainerProvider {
                 return .success(try ModelContainer(for: schema, configurations: [local]))
             } catch {
                 logger.error("Local SwiftData store failed: \(error.localizedDescription)")
-                return .failure(error)
+
+                // 3) Recovery: start with a fresh local store (preserve the failing store file).
+                // This avoids a hard-stop if the on-device store is corrupted. In production, a more
+                // sophisticated migration strategy may be needed, but SwiftData doesn't yet offer
+                // granular repair tooling.
+                let recoveryStoreURL = appSupport.appendingPathComponent("default.recovery.store")
+
+                do {
+                    let recovery = ModelConfiguration(schema: schema, url: recoveryStoreURL)
+                    logger.error("Starting fresh local store at \(recoveryStoreURL.path)")
+                    return .success(try ModelContainer(for: schema, configurations: [recovery]))
+                } catch {
+                    logger.error("Recovery local SwiftData store failed: \(error.localizedDescription)")
+                    return .failure(error)
+                }
             }
         } catch {
             logger.error("SwiftData storage directory setup failed: \(error.localizedDescription)")

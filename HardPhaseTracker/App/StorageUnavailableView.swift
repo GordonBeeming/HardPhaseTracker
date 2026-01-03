@@ -9,7 +9,7 @@ struct StorageUnavailableView: View {
             ContentUnavailableView(
                 "Storage unavailable",
                 systemImage: "exclamationmark.triangle",
-                description: Text(message)
+                description: Text(message + "\n\nIf this persists, try reinstalling the app (Simulator: delete the app) to reset the local database.")
             )
             .padding()
             .toolbar {
