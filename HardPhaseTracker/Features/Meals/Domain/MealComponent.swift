@@ -11,7 +11,7 @@ final class MealComponent {
     // Migration-safe (optional) — used for display and input conversion.
     var unit: String?
 
-    @Relationship(inverse: \MealTemplate.components)
+    @Relationship
     var template: MealTemplate?
 
     init(name: String, grams: Double, unit: String = "g") {

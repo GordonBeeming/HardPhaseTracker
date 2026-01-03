@@ -7,7 +7,7 @@ final class MealLogEntry {
     var timeZoneIdentifier: String = TimeZone.current.identifier
     var utcOffsetSeconds: Int = TimeZone.current.secondsFromGMT()
 
-    @Relationship(inverse: \MealTemplate.mealLogEntries)
+    @Relationship
     var template: MealTemplate?
     var notes: String?
 

@@ -9,7 +9,7 @@ final class EatingWindowSchedule {
     var weekdayMask: Int = 0
     var isBuiltIn: Bool = false
 
-    @Relationship(inverse: \AppSettings.selectedSchedule)
+    @Relationship
     var selectedBySettings: [AppSettings]? = []
 
     init(name: String, startMinutes: Int, endMinutes: Int, weekdayMask: Int, isBuiltIn: Bool = false) {

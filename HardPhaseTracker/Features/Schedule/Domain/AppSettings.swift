@@ -2,7 +2,7 @@ import SwiftData
 
 @Model
 final class AppSettings {
-    @Relationship(inverse: \EatingWindowSchedule.selectedBySettings)
+    @Relationship
     var selectedSchedule: EatingWindowSchedule?
 
     // Dashboard
@@ -17,7 +17,7 @@ final class AppSettings {
     var mealTimeOffsetStyle: String? // legacy (not shown in UI)
 
     // Electrolytes
-    @Relationship(inverse: \MealTemplate.selectedInSettings)
+    @Relationship
     var electrolyteTemplates: [MealTemplate]? = []
 
     /// "fixed" | "askEachTime" (optional for migration safety)

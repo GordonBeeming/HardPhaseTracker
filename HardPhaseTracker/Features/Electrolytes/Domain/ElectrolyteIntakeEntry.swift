@@ -8,7 +8,7 @@ final class ElectrolyteIntakeEntry {
     var dayStart: Date = Calendar.current.startOfDay(for: Date())
     var slotIndex: Int = 0
 
-    @Relationship(inverse: \MealTemplate.electrolyteIntakeEntries)
+    @Relationship
     var template: MealTemplate?
 
     init(timestamp: Date = Date(), slotIndex: Int, template: MealTemplate? = nil) {
