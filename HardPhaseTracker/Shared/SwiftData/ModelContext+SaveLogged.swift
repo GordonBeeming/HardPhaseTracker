@@ -9,6 +9,10 @@ extension ModelContext {
         } catch {
             Logger(subsystem: "HardPhaseTracker", category: "SwiftData")
                 .error("SwiftData save failed (\(file):\(line)): \(error.localizedDescription)")
+
+            #if DEBUG
+            assertionFailure("SwiftData save failed: \(error)")
+            #endif
         }
     }
 }

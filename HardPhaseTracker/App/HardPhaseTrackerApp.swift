@@ -6,13 +6,15 @@
 //
 
 import Foundation
-import OSLog
 import SwiftUI
 import SwiftData
 
 @main
 struct HardPhaseTrackerApp: App {
-    var sharedModelContainer: ModelContainer = {
+    @State private var container: ModelContainer?
+    @State private var containerErrorMessage: String?
+
+    init() {
         let schema = Schema([
             MealTemplate.self,
             MealComponent.self,
@@ -23,33 +25,58 @@ struct HardPhaseTrackerApp: App {
             AppSettings.self,
         ])
 
-        let iCloudContainerId = "iCloud.com.gordonbeeming.HardPhaseTracker"
+        let result = AppModelContainerProvider.make(
+            schema: schema,
+            iCloudContainerId: "iCloud.com.gordonbeeming.HardPhaseTracker"
+        )
 
-        do {
-            let cloud = ModelConfiguration(schema: schema, cloudKitDatabase: .private(iCloudContainerId))
-            return try ModelContainer(for: schema, configurations: [cloud])
-        } catch {
-            Logger(subsystem: "HardPhaseTracker", category: "CloudKit")
-                .error("CloudKit SwiftData store failed; falling back to local-only store: \(error.localizedDescription)")
-
-            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
-
-            let storeURL = appSupport.appendingPathComponent("default.store")
-            let local = ModelConfiguration(schema: schema, url: storeURL)
-
-            do {
-                return try ModelContainer(for: schema, configurations: [local])
-            } catch {
-                fatalError("Could not create ModelContainer: \(error)")
-            }
+        switch result {
+        case .success(let c):
+            _container = State(initialValue: c)
+            _containerErrorMessage = State(initialValue: nil)
+        case .failure(let e):
+            _container = State(initialValue: nil)
+            _containerErrorMessage = State(initialValue: e.localizedDescription)
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if let container {
+                ContentView()
+                    .modelContainer(container)
+            } else {
+                StorageUnavailableView(
+                    message: containerErrorMessage ?? "The app couldn't open its database.",
+                    onRetry: reloadContainer
+                )
+            }
         }
-        .modelContainer(sharedModelContainer)
+    }
+
+    private func reloadContainer() {
+        let schema = Schema([
+            MealTemplate.self,
+            MealComponent.self,
+            MealLogEntry.self,
+            ElectrolyteIntakeEntry.self,
+            ElectrolyteTargetSetting.self,
+            EatingWindowSchedule.self,
+            AppSettings.self,
+        ])
+
+        let result = AppModelContainerProvider.make(
+            schema: schema,
+            iCloudContainerId: "iCloud.com.gordonbeeming.HardPhaseTracker"
+        )
+
+        switch result {
+        case .success(let c):
+            container = c
+            containerErrorMessage = nil
+        case .failure(let e):
+            container = nil
+            containerErrorMessage = e.localizedDescription
+        }
     }
 }
