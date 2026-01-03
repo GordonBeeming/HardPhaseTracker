@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftUI
 import SwiftData
 
@@ -22,16 +23,26 @@ struct HardPhaseTrackerApp: App {
             AppSettings.self,
         ])
 
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
-
-        let storeURL = appSupport.appendingPathComponent("default.store")
-        let modelConfiguration = ModelConfiguration(schema: schema, url: storeURL)
+        let iCloudContainerId = "iCloud.com.gordonbeeming.HardPhaseTracker"
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let cloud = ModelConfiguration(schema: schema, cloudKitDatabase: .private(iCloudContainerId))
+            return try ModelContainer(for: schema, configurations: [cloud])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            Logger(subsystem: "HardPhaseTracker", category: "CloudKit")
+                .error("CloudKit SwiftData store failed; falling back to local-only store: \(error.localizedDescription)")
+
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
+
+            let storeURL = appSupport.appendingPathComponent("default.store")
+            let local = ModelConfiguration(schema: schema, url: storeURL)
+
+            do {
+                return try ModelContainer(for: schema, configurations: [local])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 
