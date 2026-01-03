@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct DashboardView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: [SortDescriptor(\MealLogEntry.timestamp, order: .reverse)])
@@ -118,6 +119,8 @@ struct DashboardView: View {
             .padding(.top, 16)
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppTheme.background(colorScheme), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {

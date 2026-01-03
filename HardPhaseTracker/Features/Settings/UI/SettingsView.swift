@@ -13,11 +13,13 @@ struct SettingsView: View {
         case dashboard = "Dashboard"
         case meals = "Meals"
         case electrolytes = "Electrolytes"
+        case health = "Health"
 
         var id: String { rawValue }
     }
 
     @State private var tab: SectionTab = .dashboard
+    @StateObject private var health = HealthKitViewModel()
 
     // Dashboard
     @State private var alwaysShowLogMeal = false
@@ -130,6 +132,56 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+
+                case .health:
+                    Section("Apple Health") {
+                        switch health.permission {
+                        case .notAvailable:
+                            Text("Health data isn’t available on this device.")
+                                .foregroundStyle(.secondary)
+
+                        case .notDetermined:
+                            Text(health.isDisconnected ? "Disconnected in-app." : "Not connected yet.")
+                                .foregroundStyle(.secondary)
+
+                        case .denied:
+                            Text("Access is denied. Enable it in Settings → Health → Data Access & Devices.")
+                                .foregroundStyle(.secondary)
+
+                        case .authorized:
+                            Text("Connected (read-only).")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let msg = health.errorMessage {
+                            Text(msg)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Section("Cached data") {
+                        LabeledContent("Last updated", value: health.cacheUpdatedAt?.formatted(date: .abbreviated, time: .shortened) ?? "Never")
+                        LabeledContent("Weight samples", value: "\(health.weightsLast7Days.count)")
+                        LabeledContent("Sleep nights", value: "\(health.sleepLast7Nights.count)")
+
+                        if health.permission == .authorized {
+                            Button("Refresh from Apple Health") {
+                                Task { await health.refresh() }
+                            }
+                        }
+
+                        Button("Clear cached data", role: .destructive) {
+                            health.clearCachedData()
+                        }
+
+                        Button("Disconnect Apple Health", role: .destructive) {
+                            health.disconnect()
+                        }
+
+                        Text("Disconnecting here stops the app from reading Apple Health and clears local cached data. You can also revoke access in iOS Settings → Health.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -154,6 +206,13 @@ struct SettingsView: View {
 
                 electrolyteServingsPerDay = ElectrolyteTargetService.servingsPerDay(for: Date(), targets: electrolyteTargets)
                 electrolyteAskEachTime = (current.electrolyteSelectionMode ?? "fixed") == "askEachTime"
+
+                Task { await health.refreshPermissionOnly() }
+            }
+            .onChange(of: tab) { _, newValue in
+                if newValue == .health {
+                    Task { await health.refreshPermissionOnly() }
+                }
             }
             .onChange(of: alwaysShowLogMeal) { _, _ in save() }
             .onChange(of: beforeHours) { _, _ in save() }

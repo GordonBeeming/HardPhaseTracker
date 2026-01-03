@@ -115,7 +115,7 @@ Each section below is “done” when:
 
 ### Test
 - [x] Unit tests: creating/saving/loading templates (in-memory SwiftData container)
-- [ ] Manual: confirm Meals starts empty on fresh install
+- [x] Manual: confirm Meals starts empty on fresh install
 
 ### Publish
 - [x] Squash merge to `main`
@@ -172,8 +172,8 @@ Each section below is “done” when:
 
 ### Test
 - [x] Unit tests: fasting duration calculation given meal timestamps
-- [ ] Manual: log meal → timer resets
-- [ ] Manual: advance time (debug) / simulate older meal → phase color shifts
+- [x] Manual: log meal → timer resets
+- [x] Manual: advance time (debug) / simulate older meal → phase color shifts
 
 ### Publish
 - [x] Squash merge to `main`
@@ -202,11 +202,11 @@ Each section below is “done” when:
   - [x] Add button can log electrolytes too
 
 ### Test
-- [ ] Unit tests: daily tally/date boundary rules for electrolyte entries
-- [ ] Manual: iPhone + iPad pass (checklist UI <5 vs 5+)
+- [x] Unit tests: daily tally/date boundary rules for electrolyte entries
+- [x] Manual: iPhone + iPad pass (checklist UI <5 vs 5+)
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 
@@ -217,23 +217,23 @@ Each section below is “done” when:
 - Present data in app (read-only).
 
 ### Build
-- [ ] Add HealthKit capability + entitlements
-- [ ] Request authorization (read-only):
-  - [ ] `bodyMass`
-  - [ ] `bodyFatPercentage`
-  - [ ] `sleepAnalysis`
-- [ ] Implement data fetch service with:
-  - [ ] Latest weight
-  - [ ] Last 7 days weight samples
-  - [ ] Last N nights sleep summaries
-- [ ] Handle permission denied / not available states gracefully
+- [x] Add HealthKit capability + entitlements
+- [x] Request authorization (read-only):
+  - [x] `bodyMass`
+  - [x] `bodyFatPercentage`
+  - [x] `sleepAnalysis`
+- [x] Implement data fetch service with:
+  - [x] Latest weight
+  - [x] Last 7 days weight samples
+  - [x] Last N nights sleep summaries
+- [x] Handle permission denied / not available states gracefully
 
 ### Test
-- [ ] Manual: authorization prompt appears; denied state shows helpful UI
-- [ ] Unit tests (where possible): date-range query building + sample mapping
+- [x] Manual: authorization prompt appears; denied state shows helpful UI
+- [x] Unit tests (where possible): date-range query building + sample mapping
 
 ### Publish
-- [ ] Squash merge to `main`
+- [x] Squash merge to `main`
 
 ---
 
