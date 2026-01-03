@@ -9,6 +9,7 @@ struct LogView: View {
 
     @State private var selectedDate: Date = .now
     @State private var isLoggingMeal = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         NavigationStack {
@@ -26,11 +27,17 @@ struct LogView: View {
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         isLoggingMeal = true
                     } label: {
                         Label("Log Meal", systemImage: "plus")
+                    }
+
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -40,6 +47,9 @@ struct LogView: View {
             MealQuickLogView(defaultTimestamp: defaultLogTimestamp, includeElectrolytes: true) {
                 isLoggingMeal = false
             }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView()
         }
         .accessibilityIdentifier("tab.log")
     }

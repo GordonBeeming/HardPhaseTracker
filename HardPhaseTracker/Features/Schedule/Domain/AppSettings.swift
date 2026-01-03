@@ -26,6 +26,9 @@ final class AppSettings {
     // Global
     var unitSystem: String? // "metric" | "imperial"
 
+    // Analysis (optional for migration safety)
+    var weeklyProteinGoalGrams: Double? // 0 == off
+
     init(
         selectedSchedule: EatingWindowSchedule? = nil,
         alwaysShowLogMealButton: Bool = false,
@@ -37,7 +40,8 @@ final class AppSettings {
         mealTimeOffsetStyle: String = "utc",
         electrolyteTemplates: [MealTemplate] = [],
         electrolyteSelectionMode: String = "fixed",
-        unitSystem: String = "metric"
+        unitSystem: String = "metric",
+        weeklyProteinGoalGrams: Double = 0
     ) {
         self.selectedSchedule = selectedSchedule
         self.alwaysShowLogMealButton = alwaysShowLogMealButton
@@ -50,5 +54,6 @@ final class AppSettings {
         self.electrolyteTemplates = electrolyteTemplates
         self.electrolyteSelectionMode = electrolyteSelectionMode
         self.unitSystem = unitSystem
+        self.weeklyProteinGoalGrams = weeklyProteinGoalGrams
     }
 }

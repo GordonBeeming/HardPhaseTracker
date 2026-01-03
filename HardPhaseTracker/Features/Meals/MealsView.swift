@@ -9,6 +9,7 @@ struct MealsView: View {
     private var templates: [MealTemplate]
 
     @State private var isAdding = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         NavigationSplitView {
@@ -43,13 +44,19 @@ struct MealsView: View {
             .navigationTitle("Meals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         isAdding = true
                     } label: {
                         Label("Add Meal", systemImage: "plus")
                     }
                     .accessibilityIdentifier("meals.add")
+
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
                 }
             }
         } detail: {
@@ -58,6 +65,9 @@ struct MealsView: View {
         .appScreen()
         .sheet(isPresented: $isAdding) {
             MealTemplateEditorView()
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView()
         }
         .accessibilityIdentifier("tab.meals")
     }

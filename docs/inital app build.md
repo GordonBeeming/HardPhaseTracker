@@ -265,14 +265,14 @@ Each section below is “done” when:
   - Weekly protein goal tracking
 
 ### Build
-- [ ] Define protein goal rules (clarify “Gordon’s requirement” into a number/logic)
-- [ ] Aggregate per-week protein totals based on logged meal templates
-- [ ] Sleep vs fasting correlation:
-  - [ ] Simple chart/table showing fasting duration and sleep duration/quality
-- [ ] UX: clear “insufficient data” empty states
+- [x] Define protein goal rules (goal is configurable in Settings)
+- [x] Aggregate per-week protein totals based on logged meal templates
+- [x] Sleep vs fasting correlation:
+  - [x] Simple chart/table showing fasting duration and sleep duration/quality
+- [x] UX: clear “insufficient data” empty states
 
 ### Test
-- [ ] Unit tests: weekly aggregation + goal comparison
+- [x] Unit tests: weekly aggregation + goal comparison
 - [ ] Manual: correlation view behaves with/without HealthKit sleep data
 
 ### Publish
@@ -289,7 +289,7 @@ Each section below is “done” when:
 - [ ] Accessibility (Dynamic Type, VoiceOver labels for key controls)
 - [ ] Error handling (HealthKit failures, SwiftData failures)
 - [ ] Performance (avoid expensive queries on every render)
-- [ ] Basic settings screen (optional): targets, thresholds
+- [x] Basic settings screen (optional): targets, thresholds
 
 ### Test
 - [ ] Manual accessibility pass
