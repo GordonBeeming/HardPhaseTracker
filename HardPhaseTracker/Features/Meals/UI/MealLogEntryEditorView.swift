@@ -66,7 +66,7 @@ struct MealLogEntryEditorView: View {
                         entry.utcOffsetSeconds = tz.secondsFromGMT(for: timestamp)
                         entry.template = selectedTemplate
                         entry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
-                        try? modelContext.save()
+                        modelContext.saveLogged()
                         dismiss()
                     }
                     .disabled(selectedTemplate == nil)

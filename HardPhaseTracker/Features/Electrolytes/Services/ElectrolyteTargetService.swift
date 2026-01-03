@@ -23,6 +23,6 @@ enum ElectrolyteTargetService {
             modelContext.insert(ElectrolyteTargetSetting(effectiveDate: today, servingsPerDay: servingsPerDay))
         }
 
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }

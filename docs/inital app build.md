@@ -286,9 +286,9 @@ Each section below is “done” when:
 - Make the app feel shippable and resilient.
 
 ### Build
-- [ ] Accessibility (Dynamic Type, VoiceOver labels for key controls)
-- [ ] Error handling (HealthKit failures, SwiftData failures)
-- [ ] Performance (avoid expensive queries on every render)
+- [x] Accessibility (Dynamic Type, VoiceOver labels for key controls)
+- [x] Error handling (HealthKit failures, SwiftData failures)
+- [x] Performance (avoid expensive queries on every render)
 - [x] Basic settings screen (optional): targets, thresholds
 
 ### Test

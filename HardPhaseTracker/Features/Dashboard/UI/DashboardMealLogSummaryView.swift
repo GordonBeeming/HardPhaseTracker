@@ -78,7 +78,7 @@ struct DashboardMealLogSummaryView: View {
             Button("Edit") { editingEntry = entry }
             Button("Delete", role: .destructive) {
                 modelContext.delete(entry)
-                try? modelContext.save()
+                modelContext.saveLogged()
             }
             Button("Cancel", role: .cancel) {
                 actionsEntry = nil

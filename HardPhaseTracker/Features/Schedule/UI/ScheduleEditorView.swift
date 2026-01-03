@@ -133,7 +133,7 @@ struct ScheduleEditorView: View {
             scheduleToEdit.startMinutes = startMinutes
             scheduleToEdit.endMinutes = endMinutes
             scheduleToEdit.weekdayMask = mask
-            try? modelContext.save()
+            modelContext.saveLogged()
             return
         }
 
@@ -152,7 +152,7 @@ struct ScheduleEditorView: View {
         if let s = settings.first {
             s.selectedSchedule = schedule
         }
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }
 

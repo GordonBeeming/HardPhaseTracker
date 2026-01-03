@@ -150,7 +150,7 @@ struct ElectrolyteChecklistView: View {
     private func toggle(slotIndex: Int) {
         if let existing = entry(for: slotIndex) {
             modelContext.delete(existing)
-            try? modelContext.save()
+            modelContext.saveLogged()
             return
         }
 
@@ -177,7 +177,7 @@ struct ElectrolyteChecklistView: View {
         let entry = ElectrolyteIntakeEntry(timestamp: timestamp, slotIndex: slotIndex, template: template)
         entry.dayStart = day
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }
 

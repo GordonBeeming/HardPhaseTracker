@@ -50,7 +50,7 @@ struct MealQuickLogView: View {
         let entry = ElectrolyteIntakeEntry(timestamp: Date(), slotIndex: next, template: template)
         entry.dayStart = day
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveLogged()
         didLog()
     }
 

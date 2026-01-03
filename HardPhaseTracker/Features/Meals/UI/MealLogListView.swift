@@ -84,7 +84,7 @@ struct MealLogListView: View {
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button("Delete", role: .destructive) {
                                         modelContext.delete(e)
-                                        try? modelContext.save()
+                                        modelContext.saveLogged()
                                     }
                                 }
 
@@ -110,7 +110,7 @@ struct MealLogListView: View {
                                     Button("Edit") { editingEntry = entry }
                                     Button("Delete", role: .destructive) {
                                         modelContext.delete(entry)
-                                        try? modelContext.save()
+                                        modelContext.saveLogged()
                                     }
                                 }
                             }

@@ -308,7 +308,7 @@ struct SettingsView: View {
         current.unitSystem = unitSystem.rawValue
         current.weeklyProteinGoalGrams = Double(weeklyProteinGoalGrams)
 
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 
     private var exampleText: String {
@@ -336,7 +336,7 @@ struct SettingsView: View {
         } else {
             current.electrolyteTemplates.append(template)
         }
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 
     private func isElectrolyteTemplateSelected(_ template: MealTemplate) -> Bool {

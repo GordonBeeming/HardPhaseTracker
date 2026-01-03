@@ -196,7 +196,7 @@ struct MealTemplateEditorView: View {
             modelContext.insert(template)
         }
 
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 
     private func saveAsNewTemplate() {
@@ -217,7 +217,7 @@ struct MealTemplateEditorView: View {
                 .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }
         )
         modelContext.insert(template)
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }
 

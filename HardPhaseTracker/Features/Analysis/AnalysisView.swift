@@ -7,7 +7,15 @@ struct AnalysisView: View {
     @State private var isShowingSettings = false
 
     @Query private var settings: [AppSettings]
-    @Query(sort: [SortDescriptor(\MealLogEntry.timestamp, order: .reverse)]) private var mealEntries: [MealLogEntry]
+    @Query private var mealEntries: [MealLogEntry]
+
+    init() {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -180, to: .now) ?? .distantPast
+        _mealEntries = Query(
+            filter: #Predicate<MealLogEntry> { $0.timestamp >= cutoff },
+            sort: [SortDescriptor(\MealLogEntry.timestamp, order: .reverse)]
+        )
+    }
 
     private var weeklyProteinGoalGrams: Double {
         settings.first?.weeklyProteinGoalGrams ?? 0
@@ -143,6 +151,7 @@ struct AnalysisView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
             .task {

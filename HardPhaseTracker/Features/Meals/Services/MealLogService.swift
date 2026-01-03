@@ -17,6 +17,6 @@ enum MealLogService {
             notes: notes
         )
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }

@@ -63,7 +63,7 @@ struct SchedulePickerView: View {
                                     }
 
                                     modelContext.delete(schedule)
-                                    try? modelContext.save()
+                                    modelContext.saveLogged()
                                 }
                             }
                         }
@@ -96,6 +96,6 @@ struct SchedulePickerView: View {
         } else {
             modelContext.insert(AppSettings(selectedSchedule: schedule))
         }
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }

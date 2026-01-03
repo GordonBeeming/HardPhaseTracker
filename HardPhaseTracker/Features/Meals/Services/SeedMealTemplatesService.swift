@@ -14,7 +14,7 @@ enum SeedMealTemplatesService {
         }
 
         StarterMeals.templates().forEach { modelContext.insert($0) }
-        try? modelContext.save()
+        modelContext.saveLogged()
         UserDefaults.standard.set(true, forKey: seedKey)
     }
 }

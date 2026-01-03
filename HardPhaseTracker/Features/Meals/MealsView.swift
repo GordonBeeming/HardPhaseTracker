@@ -57,6 +57,7 @@ struct MealsView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
         } detail: {
@@ -76,7 +77,7 @@ struct MealsView: View {
         for index in offsets {
             modelContext.delete(templates[index])
         }
-        try? modelContext.save()
+        modelContext.saveLogged()
     }
 }
 

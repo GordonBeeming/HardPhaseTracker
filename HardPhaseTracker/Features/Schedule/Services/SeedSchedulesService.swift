@@ -34,7 +34,7 @@ enum SeedSchedulesService {
             if currentSettings?.unitSystem == nil { currentSettings?.unitSystem = "metric" }
         }
 
-        try? modelContext.save()
+        modelContext.saveLogged()
         UserDefaults.standard.set(true, forKey: seedKey)
     }
 }
