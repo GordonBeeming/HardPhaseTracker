@@ -26,6 +26,6 @@ struct MealTemplatePersistenceTests {
         let fetched = try context.fetch(FetchDescriptor<MealTemplate>())
         #expect(fetched.count == 1)
         #expect(fetched.first?.name == "Test Meal")
-        #expect(fetched.first?.components.count == 1)
+        #expect(fetched.first?.componentsList.count == 1)
     }
 }

@@ -13,11 +13,11 @@ struct MealTemplateDetailView: View {
             }
 
             Section("Components") {
-                if template.components.isEmpty {
+                if template.componentsList.isEmpty {
                     Text("No components")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(template.components) { component in
+                    ForEach(template.componentsList) { component in
                         HStack {
                             Text(component.name)
                             Spacer()

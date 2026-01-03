@@ -27,7 +27,7 @@ struct MealTemplateEditorView: View {
         _carbs = State(initialValue: template.map { String($0.carbs) } ?? "")
         _fats = State(initialValue: template.map { String($0.fats) } ?? "")
         _isElectrolyte = State(initialValue: template?.kind == MealTemplateKind.electrolyte.rawValue)
-        _components = State(initialValue: template?.components.map {
+        _components = State(initialValue: template?.componentsList.map {
             ComponentDraft(name: $0.name, grams: String($0.grams), unit: $0.unit ?? "g")
         } ?? [])
     }
@@ -178,7 +178,7 @@ struct MealTemplateEditorView: View {
             templateToEdit.fats = parsedFats
             templateToEdit.kind = kind
 
-            templateToEdit.components.forEach { modelContext.delete($0) }
+            templateToEdit.componentsList.forEach { modelContext.delete($0) }
             templateToEdit.components = components
                 .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                 .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }

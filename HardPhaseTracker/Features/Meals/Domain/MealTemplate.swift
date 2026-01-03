@@ -8,16 +8,29 @@ enum MealTemplateKind: String {
 
 @Model
 final class MealTemplate {
-    var name: String
-    var protein: Double
-    var carbs: Double
-    var fats: Double
+    var name: String = ""
+    var protein: Double = 0
+    var carbs: Double = 0
+    var fats: Double = 0
 
     /// "meal" | "electrolyte" (optional for migration safety)
     var kind: String?
 
     @Relationship(inverse: \MealComponent.template)
-    var components: [MealComponent]
+    var components: [MealComponent]? = []
+
+    @Relationship(inverse: \MealLogEntry.template)
+    var mealLogEntries: [MealLogEntry]? = []
+
+    @Relationship(inverse: \ElectrolyteIntakeEntry.template)
+    var electrolyteIntakeEntries: [ElectrolyteIntakeEntry]? = []
+
+    @Relationship(inverse: \AppSettings.electrolyteTemplates)
+    var selectedInSettings: [AppSettings]? = []
+
+    var componentsList: [MealComponent] {
+        components ?? []
+    }
 
     init(
         name: String,

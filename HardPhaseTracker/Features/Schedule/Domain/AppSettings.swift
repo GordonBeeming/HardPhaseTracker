@@ -2,13 +2,13 @@ import SwiftData
 
 @Model
 final class AppSettings {
-    @Relationship
+    @Relationship(inverse: \EatingWindowSchedule.selectedBySettings)
     var selectedSchedule: EatingWindowSchedule?
 
     // Dashboard
-    var alwaysShowLogMealButton: Bool
-    var logMealShowBeforeHours: Double
-    var logMealShowAfterHours: Double
+    var alwaysShowLogMealButton: Bool = false
+    var logMealShowBeforeHours: Double = 0.5
+    var logMealShowAfterHours: Double = 2.5
     var dashboardMealListCount: Int? // migration-safe
 
     // Meals / time display (optional for migration safety)
@@ -17,8 +17,8 @@ final class AppSettings {
     var mealTimeOffsetStyle: String? // legacy (not shown in UI)
 
     // Electrolytes
-    @Relationship
-    var electrolyteTemplates: [MealTemplate]
+    @Relationship(inverse: \MealTemplate.selectedInSettings)
+    var electrolyteTemplates: [MealTemplate]? = []
 
     /// "fixed" | "askEachTime" (optional for migration safety)
     var electrolyteSelectionMode: String?

@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 final class ElectrolyteIntakeEntry {
-    var timestamp: Date
+    var timestamp: Date = Date()
     /// Cached start-of-day for efficient filtering.
-    var dayStart: Date
-    var slotIndex: Int
+    var dayStart: Date = Calendar.current.startOfDay(for: Date())
+    var slotIndex: Int = 0
 
-    @Relationship
+    @Relationship(inverse: \MealTemplate.electrolyteIntakeEntries)
     var template: MealTemplate?
 
     init(timestamp: Date = Date(), slotIndex: Int, template: MealTemplate? = nil) {

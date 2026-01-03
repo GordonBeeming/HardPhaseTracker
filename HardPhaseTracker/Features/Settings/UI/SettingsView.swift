@@ -331,17 +331,19 @@ struct SettingsView: View {
         let current = settings.first ?? AppSettings()
         if settings.isEmpty { modelContext.insert(current) }
 
-        if let idx = current.electrolyteTemplates.firstIndex(where: { $0.persistentModelID == template.persistentModelID }) {
-            current.electrolyteTemplates.remove(at: idx)
+        var list = current.electrolyteTemplates ?? []
+        if let idx = list.firstIndex(where: { $0.persistentModelID == template.persistentModelID }) {
+            list.remove(at: idx)
         } else {
-            current.electrolyteTemplates.append(template)
+            list.append(template)
         }
+        current.electrolyteTemplates = list
         modelContext.saveLogged()
     }
 
     private func isElectrolyteTemplateSelected(_ template: MealTemplate) -> Bool {
         let current = settings.first
-        return current?.electrolyteTemplates.contains(where: { $0.persistentModelID == template.persistentModelID }) ?? false
+        return (current?.electrolyteTemplates ?? []).contains(where: { $0.persistentModelID == template.persistentModelID })
     }
 
     private func hoursText(_ hours: Double) -> String {

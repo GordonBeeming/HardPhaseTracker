@@ -36,11 +36,11 @@ struct MealLogEntryDetailView: View {
                 }
 
                 Section("Components") {
-                    if template.components.isEmpty {
+                    if template.componentsList.isEmpty {
                         Text("No components")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(template.components) { c in
+                        ForEach(template.componentsList) { c in
                             HStack {
                                 Text(c.name)
                                 Spacer()

@@ -3,15 +3,15 @@ import SwiftData
 
 @Model
 final class MealComponent {
-    var name: String
+    var name: String = ""
 
     // Canonical stored value for now.
-    var grams: Double
+    var grams: Double = 0
 
     // Migration-safe (optional) — used for display and input conversion.
     var unit: String?
 
-    @Relationship
+    @Relationship(inverse: \MealTemplate.components)
     var template: MealTemplate?
 
     init(name: String, grams: Double, unit: String = "g") {

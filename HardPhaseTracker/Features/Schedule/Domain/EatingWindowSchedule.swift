@@ -3,11 +3,14 @@ import SwiftData
 
 @Model
 final class EatingWindowSchedule {
-    var name: String
-    var startMinutes: Int
-    var endMinutes: Int
-    var weekdayMask: Int
-    var isBuiltIn: Bool
+    var name: String = ""
+    var startMinutes: Int = 0
+    var endMinutes: Int = 0
+    var weekdayMask: Int = 0
+    var isBuiltIn: Bool = false
+
+    @Relationship(inverse: \AppSettings.selectedSchedule)
+    var selectedBySettings: [AppSettings]? = []
 
     init(name: String, startMinutes: Int, endMinutes: Int, weekdayMask: Int, isBuiltIn: Bool = false) {
         self.name = name
