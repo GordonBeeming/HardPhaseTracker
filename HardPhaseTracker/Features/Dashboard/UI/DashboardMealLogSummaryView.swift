@@ -32,8 +32,13 @@ struct DashboardMealLogSummaryView: View {
                             detailEntry = entry
                         } label: {
                             HStack {
+                                Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                    .foregroundStyle(.secondary)
+
                                 Text(entry.template?.name ?? "Meal")
+
                                 Spacer()
+
                                 Text(timeText(for: entry))
                                     .foregroundStyle(.secondary)
                             }

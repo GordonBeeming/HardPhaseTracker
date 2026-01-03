@@ -53,48 +53,53 @@ struct DashboardView: View {
                     TimelineView(.periodic(from: .now, by: 60)) { context in
                         let inWindow = EatingWindowEvaluator.isNowInWindow(schedule: selectedSchedule, now: context.date)
 
-                        if inWindow {
-                            VStack(spacing: 10) {
-                                EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
+                        VStack(spacing: 12) {
+                            ElectrolyteChecklistView(date: context.date, settings: appSettings)
+                                .padding(.horizontal)
 
-                                Button("Change eating window") {
-                                    isPickingSchedule = true
-                                }
-                                .font(.footnote)
+                            if inWindow {
+                                VStack(spacing: 10) {
+                                    EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
 
-                                if !shouldShowPrimaryLogMeal {
-                                    Button("Log meal") {
-                                        isLoggingMeal = true
+                                    Button("Change eating window") {
+                                        isPickingSchedule = true
                                     }
                                     .font(.footnote)
-                                }
-                            }
-                        } else {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Label("Outside eating window", systemImage: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
 
-                                EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
-
-                                Button("Change eating window") {
-                                    isPickingSchedule = true
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.orange)
-
-                                if !shouldShowPrimaryLogMeal {
-                                    Button("Log meal anyway") {
-                                        isLoggingMeal = true
+                                    if !shouldShowPrimaryLogMeal {
+                                        Button("Log meal") {
+                                            isLoggingMeal = true
+                                        }
+                                        .font(.footnote)
                                     }
-                                    .font(.footnote)
                                 }
+                            } else {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Label("Outside eating window", systemImage: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+
+                                    EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
+
+                                    Button("Change eating window") {
+                                        isPickingSchedule = true
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.orange)
+
+                                    if !shouldShowPrimaryLogMeal {
+                                        Button("Log meal anyway") {
+                                            isLoggingMeal = true
+                                        }
+                                        .font(.footnote)
+                                    }
+                                }
+                                .padding(16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(Color.orange.opacity(0.12))
+                                )
+                                .padding(.horizontal)
                             }
-                            .padding(16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(Color.orange.opacity(0.12))
-                            )
-                            .padding(.horizontal)
                         }
                     }
                 }

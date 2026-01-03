@@ -32,7 +32,7 @@ struct LogView: View {
         }
         .appScreen()
         .sheet(isPresented: $isLoggingMeal) {
-            MealQuickLogView(defaultTimestamp: defaultLogTimestamp) {
+            MealQuickLogView(defaultTimestamp: defaultLogTimestamp, includeElectrolytes: true) {
                 isLoggingMeal = false
             }
         }

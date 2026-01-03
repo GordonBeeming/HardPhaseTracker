@@ -22,7 +22,11 @@ struct MealLogEntryDetailView: View {
 
             if let template = entry.template {
                 Section("Meal") {
-                    Text(template.name)
+                    HStack(spacing: 10) {
+                        Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                            .foregroundStyle(.secondary)
+                        Text(template.name)
+                    }
                 }
 
                 Section("Macros") {

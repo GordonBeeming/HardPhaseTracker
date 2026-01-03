@@ -16,6 +16,13 @@ final class AppSettings {
     var mealTimeZoneBadgeStyle: String? // "abbrev"
     var mealTimeOffsetStyle: String? // legacy (not shown in UI)
 
+    // Electrolytes
+    @Relationship
+    var electrolyteTemplates: [MealTemplate]
+
+    /// "fixed" | "askEachTime" (optional for migration safety)
+    var electrolyteSelectionMode: String?
+
     // Global
     var unitSystem: String? // "metric" | "imperial"
 
@@ -28,6 +35,8 @@ final class AppSettings {
         mealTimeDisplayMode: String = "captured",
         mealTimeZoneBadgeStyle: String = "abbrev",
         mealTimeOffsetStyle: String = "utc",
+        electrolyteTemplates: [MealTemplate] = [],
+        electrolyteSelectionMode: String = "fixed",
         unitSystem: String = "metric"
     ) {
         self.selectedSchedule = selectedSchedule
@@ -38,6 +47,8 @@ final class AppSettings {
         self.mealTimeDisplayMode = mealTimeDisplayMode
         self.mealTimeZoneBadgeStyle = mealTimeZoneBadgeStyle
         self.mealTimeOffsetStyle = mealTimeOffsetStyle
+        self.electrolyteTemplates = electrolyteTemplates
+        self.electrolyteSelectionMode = electrolyteSelectionMode
         self.unitSystem = unitSystem
     }
 }

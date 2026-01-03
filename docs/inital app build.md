@@ -183,18 +183,27 @@ Each section below is “done” when:
 ## Milestone 5 — Electrolyte Log (Sodii Tracker)
 
 ### Scope
-- One-tap log for Sodii.
-- Track daily servings vs target (2–4).
+- Track daily electrolyte servings vs a per-day target.
+- Allow logging inside the fasting window (separate from meals).
 
 ### Build
-- [ ] SwiftData model: `ElectrolyteLogEntry` (timestamp, type = Sodii, servings = 1)
-- [ ] Dashboard “Log Sodii” button
-- [ ] Daily tally widget on Dashboard
-- [ ] Target range indicator (2–4) + simple status state (below / in-range / above)
+- [x] SwiftData models:
+  - [x] `ElectrolyteTargetSetting` (effective-date target so past days do not change)
+  - [x] `ElectrolyteIntakeEntry` (timestamp + slot index + optional template)
+- [x] Meal templates can be flagged as electrolytes + have components
+- [x] Settings:
+  - [x] Set servings/day (applies today+ only)
+  - [x] Choose electrolyte templates
+  - [x] “Ask me each time” option
+- [x] Dashboard:
+  - [x] Electrolyte checklist shown outside warning styling
+- [x] Log tab:
+  - [x] Electrolytes appear inline with meals, ordered by timestamp
+  - [x] Add button can log electrolytes too
 
 ### Test
-- [ ] Unit tests: daily tally calculation by date boundaries
-- [ ] Manual: logging increments, resets next day
+- [ ] Unit tests: daily tally/date boundary rules for electrolyte entries
+- [ ] Manual: iPhone + iPad pass (checklist UI <5 vs 5+)
 
 ### Publish
 - [ ] Squash merge to `main`

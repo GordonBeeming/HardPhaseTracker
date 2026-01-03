@@ -6,10 +6,13 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query private var settings: [AppSettings]
+    @Query(sort: [SortDescriptor(\MealTemplate.name)]) private var templates: [MealTemplate]
+    @Query(sort: [SortDescriptor(\ElectrolyteTargetSetting.effectiveDate)]) private var electrolyteTargets: [ElectrolyteTargetSetting]
 
     private enum SectionTab: String, CaseIterable, Identifiable {
         case dashboard = "Dashboard"
         case meals = "Meals"
+        case electrolytes = "Electrolytes"
 
         var id: String { rawValue }
     }
@@ -24,6 +27,10 @@ struct SettingsView: View {
 
     // Meals / time
     @State private var mealTimeDisplayMode: MealTimeDisplayMode = .captured
+
+    // Electrolytes
+    @State private var electrolyteServingsPerDay: Int = 0
+    @State private var electrolyteAskEachTime: Bool = false
 
     // Global
     @State private var unitSystem: UnitSystem = .metric
@@ -76,6 +83,53 @@ struct SettingsView: View {
                             Text("Imperial").tag(UnitSystem.imperial)
                         }
                     }
+
+                case .electrolytes:
+                    Section("Daily target") {
+                        Stepper(value: $electrolyteServingsPerDay, in: 0...12) {
+                            Text(electrolyteServingsPerDay == 0 ? "Off" : "\(electrolyteServingsPerDay) servings per day")
+                        }
+
+                        Text("Changing this only affects today and future days.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("Selection") {
+                        Toggle("Ask me each time", isOn: $electrolyteAskEachTime)
+                        Text("If enabled, ticking a serving will always ask which electrolyte you had.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("Electrolyte templates") {
+                        let electrolyteTemplates = templates.filter { $0.kind == MealTemplateKind.electrolyte.rawValue }
+
+                        if electrolyteTemplates.isEmpty {
+                            Text("No electrolyte templates yet. Create one in Meals and enable ‘Use as electrolyte’. ")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(electrolyteTemplates) { t in
+                                Button {
+                                    toggleElectrolyteTemplate(t)
+                                } label: {
+                                    HStack {
+                                        Text(t.name)
+                                        Spacer()
+                                        if isElectrolyteTemplateSelected(t) {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        Text("Selected templates are offered when you tick off a serving.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -97,12 +151,19 @@ struct SettingsView: View {
                 dashboardMealListCount = current.dashboardMealListCount ?? 10
 
                 unitSystem = current.unitSystemEnum
+
+                electrolyteServingsPerDay = ElectrolyteTargetService.servingsPerDay(for: Date(), targets: electrolyteTargets)
+                electrolyteAskEachTime = (current.electrolyteSelectionMode ?? "fixed") == "askEachTime"
             }
             .onChange(of: alwaysShowLogMeal) { _, _ in save() }
             .onChange(of: beforeHours) { _, _ in save() }
             .onChange(of: afterHours) { _, _ in save() }
             .onChange(of: dashboardMealListCount) { _, _ in save() }
             .onChange(of: mealTimeDisplayMode) { _, _ in save() }
+            .onChange(of: electrolyteServingsPerDay) { _, newValue in
+                ElectrolyteTargetService.upsertToday(servingsPerDay: newValue, modelContext: modelContext)
+            }
+            .onChange(of: electrolyteAskEachTime) { _, _ in save() }
             .onChange(of: unitSystem) { _, _ in save() }
 
         }
@@ -121,6 +182,8 @@ struct SettingsView: View {
         current.mealTimeDisplayMode = mealTimeDisplayMode.rawValue
         // current.mealTimeZoneBadgeStyle not user-configurable (single supported style)
         // current.mealTimeOffsetStyle removed
+
+        current.electrolyteSelectionMode = electrolyteAskEachTime ? "askEachTime" : "fixed"
 
         current.unitSystem = unitSystem.rawValue
 
@@ -141,6 +204,23 @@ struct SettingsView: View {
             offsetStyle: .utc,
             deviceTimeZone: device
         )
+    }
+
+    private func toggleElectrolyteTemplate(_ template: MealTemplate) {
+        let current = settings.first ?? AppSettings()
+        if settings.isEmpty { modelContext.insert(current) }
+
+        if let idx = current.electrolyteTemplates.firstIndex(where: { $0.persistentModelID == template.persistentModelID }) {
+            current.electrolyteTemplates.remove(at: idx)
+        } else {
+            current.electrolyteTemplates.append(template)
+        }
+        try? modelContext.save()
+    }
+
+    private func isElectrolyteTemplateSelected(_ template: MealTemplate) -> Bool {
+        let current = settings.first
+        return current?.electrolyteTemplates.contains(where: { $0.persistentModelID == template.persistentModelID }) ?? false
     }
 
     private func hoursText(_ hours: Double) -> String {

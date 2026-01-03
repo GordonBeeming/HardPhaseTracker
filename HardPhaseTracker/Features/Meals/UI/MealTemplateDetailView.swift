@@ -30,7 +30,19 @@ struct MealTemplateDetailView: View {
             }
         }
         .navigationTitle(template.name)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                        .foregroundStyle(.secondary)
+                    Text(template.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                }
+                .accessibilityLabel(template.name)
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit") { isEditing = true }
                     .accessibilityIdentifier("mealDetail.edit")

@@ -10,6 +10,10 @@ struct MealLogEntryEditorView: View {
     @Query(sort: [SortDescriptor(\MealTemplate.name)])
     private var templates: [MealTemplate]
 
+    private var mealTemplates: [MealTemplate] {
+        templates.filter { $0.kind != MealTemplateKind.electrolyte.rawValue }
+    }
+
     let entry: MealLogEntry
 
     @State private var timestamp: Date
@@ -28,8 +32,9 @@ struct MealLogEntryEditorView: View {
             Form {
                 Section("Meal") {
                     Picker("Template", selection: $selectedTemplate) {
-                        ForEach(templates) { t in
-                            Text(t.name).tag(Optional(t))
+                        ForEach(mealTemplates) { t in
+                            Label(t.name, systemImage: (t.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                .tag(Optional(t))
                         }
                     }
                 }
@@ -46,7 +51,7 @@ struct MealLogEntryEditorView: View {
             .navigationTitle("Edit meal")
             .onAppear {
                 if selectedTemplate == nil {
-                    selectedTemplate = templates.first
+                    selectedTemplate = mealTemplates.first
                 }
             }
             .toolbar {

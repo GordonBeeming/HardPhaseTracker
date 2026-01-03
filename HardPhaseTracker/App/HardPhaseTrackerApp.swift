@@ -16,6 +16,8 @@ struct HardPhaseTrackerApp: App {
             MealTemplate.self,
             MealComponent.self,
             MealLogEntry.self,
+            ElectrolyteIntakeEntry.self,
+            ElectrolyteTargetSetting.self,
             EatingWindowSchedule.self,
             AppSettings.self,
         ])

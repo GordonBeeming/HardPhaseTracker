@@ -4,9 +4,20 @@ import SwiftData
 struct MealLogListView: View {
     @Environment(\.modelContext) private var modelContext
 
+    @Query private var electrolyteEntries: [ElectrolyteIntakeEntry]
+
     let entries: [MealLogEntry]
     let selectedDate: Date
     let settings: AppSettings?
+
+    init(entries: [MealLogEntry], selectedDate: Date, settings: AppSettings?) {
+        self.entries = entries
+        self.selectedDate = selectedDate
+        self.settings = settings
+
+        let day = Calendar.current.startOfDay(for: selectedDate)
+        _electrolyteEntries = Query(filter: #Predicate<ElectrolyteIntakeEntry> { $0.dayStart == day })
+    }
 
     @State private var editingEntry: MealLogEntry?
     @State private var detailEntry: MealLogEntry?
@@ -14,8 +25,17 @@ struct MealLogListView: View {
     var body: some View {
         let grouped = group(entries: entries)
 
+        let shouldShowElectrolytes = !electrolyteEntries.isEmpty
+
+        let displayedGroups: [DayGroup] = {
+            if grouped.isEmpty && shouldShowElectrolytes {
+                return [DayGroup(day: Calendar.current.startOfDay(for: selectedDate), entries: [])]
+            }
+            return grouped
+        }()
+
         Group {
-            if entries.isEmpty {
+            if entries.isEmpty && !shouldShowElectrolytes {
                 ContentUnavailableView(
                     emptyTitle,
                     systemImage: "fork.knife",
@@ -24,26 +44,56 @@ struct MealLogListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
-                    ForEach(grouped, id: \.day) { group in
+                    ForEach(displayedGroups, id: \.day) { group in
                         Section(dayTitle(group.day)) {
-                            ForEach(group.entries) { entry in
-                                Button {
-                                    detailEntry = entry
-                                } label: {
+                            let isSelectedDayGroup = Calendar.current.isDate(group.day, inSameDayAs: selectedDate)
+                            let electrolyteRows = (shouldShowElectrolytes && isSelectedDayGroup) ? electrolyteEntries : []
+
+                            let rows: [LogRow] = (electrolyteRows.map { LogRow.electrolyte($0) } + group.entries.map { LogRow.meal($0) })
+                                .sorted { $0.timestamp > $1.timestamp }
+
+                            ForEach(rows) { row in
+                                switch row {
+                                case .electrolyte(let e):
                                     HStack {
-                                        Text(entry.template?.name ?? "Meal")
-                                        Spacer()
-                                        Text(timeText(for: entry))
+                                        Image(systemName: "drop.fill")
                                             .foregroundStyle(.secondary)
+
+                                        Text(e.template?.name ?? "Electrolyte")
+
+                                        Spacer()
                                     }
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button("Edit") { editingEntry = entry }
-                                    Button("Delete", role: .destructive) {
-                                        modelContext.delete(entry)
-                                        try? modelContext.save()
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Delete", role: .destructive) {
+                                            modelContext.delete(e)
+                                            try? modelContext.save()
+                                        }
+                                    }
+
+                                case .meal(let entry):
+                                    Button {
+                                        detailEntry = entry
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                                .foregroundStyle(.secondary)
+
+                                            Text(entry.template?.name ?? "Meal")
+
+                                            Spacer()
+
+                                            Text(timeText(for: entry))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Edit") { editingEntry = entry }
+                                        Button("Delete", role: .destructive) {
+                                            modelContext.delete(entry)
+                                            try? modelContext.save()
+                                        }
                                     }
                                 }
                             }
@@ -66,6 +116,29 @@ struct MealLogListView: View {
     private var emptyTitle: String {
         let cal = Calendar.current
         return cal.isDateInToday(selectedDate) ? "No meals today" : "No meals on this day"
+    }
+
+    private enum LogRow: Identifiable {
+        case meal(MealLogEntry)
+        case electrolyte(ElectrolyteIntakeEntry)
+
+        var id: String {
+            switch self {
+            case .meal(let e):
+                return "meal-\(e.persistentModelID)"
+            case .electrolyte(let e):
+                return "electrolyte-\(e.persistentModelID)"
+            }
+        }
+
+        var timestamp: Date {
+            switch self {
+            case .meal(let e):
+                return e.timestamp
+            case .electrolyte(let e):
+                return e.timestamp
+            }
+        }
     }
 
     private struct DayGroup {
