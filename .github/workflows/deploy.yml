@@ -17,7 +17,7 @@ jobs:
         fetch-depth: 0
       
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
       
     - name: Show Xcode version
       run: xcodebuild -version
@@ -27,7 +27,7 @@ jobs:
         xcodebuild clean build-for-testing \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
           -quiet \
           -skipPackagePluginValidation \
           DEVELOPMENT_TEAM="" \
@@ -39,7 +39,7 @@ jobs:
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
           -only-testing:HardPhaseTrackerTests \
           -quiet
           
@@ -48,7 +48,7 @@ jobs:
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
           -only-testing:HardPhaseTrackerUITests \
           -quiet
       continue-on-error: true
@@ -75,7 +75,7 @@ jobs:
         fetch-depth: 0
         
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
       
     - name: Import signing certificates
       env:
@@ -199,7 +199,7 @@ jobs:
         fetch-depth: 0
         
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
       
     - name: Import signing certificates
       env:
