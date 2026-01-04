@@ -39,88 +39,95 @@ struct MealLogListView: View {
 
         let isEmptyState = entries.isEmpty && !shouldShowElectrolytes
 
-        List {
-            if let header {
-                Section {
-                    header()
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(AppTheme.background(colorScheme))
-                }
-            }
-
+        Group {
             if isEmptyState {
-                Section {
+                VStack(spacing: 0) {
+                    if let header {
+                        header()
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                            .padding(.bottom, 4)
+                    }
+
                     ContentUnavailableView(
                         emptyTitle,
                         systemImage: "fork.knife",
                         description: Text("Log a meal to see it here.")
                     )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 32)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(AppTheme.background(colorScheme))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, 16)
                 }
             } else {
-                ForEach(displayedGroups, id: \.day) { group in
-                    Section(dayTitle(group.day)) {
-                        let isSelectedDayGroup = Calendar.current.isDate(group.day, inSameDayAs: selectedDate)
-                        let electrolyteRows = (shouldShowElectrolytes && isSelectedDayGroup) ? electrolyteEntries : []
+                List {
+                    if let header {
+                        Section {
+                            header()
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(AppTheme.background(colorScheme))
+                        }
+                    }
 
-                        let rows: [LogRow] = (electrolyteRows.map { LogRow.electrolyte($0) } + group.entries.map { LogRow.meal($0) })
-                            .sorted { $0.timestamp > $1.timestamp }
+                    ForEach(displayedGroups, id: \.day) { group in
+                        Section(dayTitle(group.day)) {
+                            let isSelectedDayGroup = Calendar.current.isDate(group.day, inSameDayAs: selectedDate)
+                            let electrolyteRows = (shouldShowElectrolytes && isSelectedDayGroup) ? electrolyteEntries : []
 
-                        ForEach(rows) { row in
-                            switch row {
-                            case .electrolyte(let e):
-                                HStack {
-                                    Image(systemName: "drop.fill")
-                                        .foregroundStyle(.secondary)
+                            let rows: [LogRow] = (electrolyteRows.map { LogRow.electrolyte($0) } + group.entries.map { LogRow.meal($0) })
+                                .sorted { $0.timestamp > $1.timestamp }
 
-                                    Text(e.template?.name ?? "Electrolyte")
-
-                                    Spacer()
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button("Delete", role: .destructive) {
-                                        modelContext.delete(e)
-                                        modelContext.saveLogged()
-                                    }
-                                }
-
-                            case .meal(let entry):
-                                Button {
-                                    detailEntry = entry
-                                } label: {
+                            ForEach(rows) { row in
+                                switch row {
+                                case .electrolyte(let e):
                                     HStack {
-                                        Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                        Image(systemName: "drop.fill")
                                             .foregroundStyle(.secondary)
 
-                                        Text(entry.template?.name ?? "Meal")
+                                        Text(e.template?.name ?? "Electrolyte")
 
                                         Spacer()
-
-                                        Text(timeText(for: entry))
-                                            .foregroundStyle(.secondary)
                                     }
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button("Edit") { editingEntry = entry }
-                                    Button("Delete", role: .destructive) {
-                                        modelContext.delete(entry)
-                                        modelContext.saveLogged()
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Delete", role: .destructive) {
+                                            modelContext.delete(e)
+                                            modelContext.saveLogged()
+                                        }
+                                    }
+
+                                case .meal(let entry):
+                                    Button {
+                                        detailEntry = entry
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                                .foregroundStyle(.secondary)
+
+                                            Text(entry.template?.name ?? "Meal")
+
+                                            Spacer()
+
+                                            Text(timeText(for: entry))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Edit") { editingEntry = entry }
+                                        Button("Delete", role: .destructive) {
+                                            modelContext.delete(entry)
+                                            modelContext.saveLogged()
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
         .background(AppTheme.background(colorScheme))
         .sheet(item: $editingEntry) { entry in
             MealLogEntryEditorView(entry: entry)

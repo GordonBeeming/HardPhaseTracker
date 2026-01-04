@@ -1,10 +1,12 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.openURL) private var openURL
 
     @Query private var settings: [AppSettings]
     @Query(sort: [SortDescriptor(\MealTemplate.name)]) private var templates: [MealTemplate]
@@ -238,12 +240,23 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
 
                     case .notDetermined:
+                        Button("Connect to Apple Health") {
+                            Task { await health.requestAccess() }
+                        }
+
                         Text(health.isDisconnected ? "Disconnected in-app." : "Not connected yet.")
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
 
                     case .denied:
                         Text("Access is denied. Enable it in Settings → Health → Data Access & Devices.")
                             .foregroundStyle(.secondary)
+
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        }
 
                     case .authorized:
                         Text("Connected (read-only).")
@@ -256,28 +269,28 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Cached data") {
-                    LabeledContent("Last updated", value: health.cacheUpdatedAt?.formatted(date: .abbreviated, time: .shortened) ?? "Never")
-                    LabeledContent("Weight samples", value: "\(health.weightsLast7Days.count)")
-                    LabeledContent("Sleep nights", value: "\(health.sleepLast7Nights.count)")
+                if health.permission == .authorized {
+                    Section("Cached data") {
+                        LabeledContent("Last updated", value: health.cacheUpdatedAt?.formatted(date: .abbreviated, time: .shortened) ?? "Never")
+                        LabeledContent("Weight samples", value: "\(health.weightsLast7Days.count)")
+                        LabeledContent("Sleep nights", value: "\(health.sleepLast7Nights.count)")
 
-                    if health.permission == .authorized {
                         Button("Refresh from Apple Health") {
                             Task { await health.refresh() }
                         }
-                    }
 
-                    Button("Clear cached data", role: .destructive) {
-                        health.clearCachedData()
-                    }
+                        Button("Clear cached data", role: .destructive) {
+                            health.clearCachedData()
+                        }
 
-                    Button("Disconnect Apple Health", role: .destructive) {
-                        health.disconnect()
-                    }
+                        Button("Disconnect Apple Health", role: .destructive) {
+                            health.disconnect()
+                        }
 
-                    Text("Disconnecting here stops the app from reading Apple Health and clears local cached data. You can also revoke access in iOS Settings → Health.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        Text("Disconnecting here stops the app from reading Apple Health and clears local cached data. You can also revoke access in iOS Settings → Health.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
