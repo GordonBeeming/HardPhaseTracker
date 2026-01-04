@@ -130,7 +130,7 @@ jobs:
           
     - name: Export IPA
       run: |
-        cat > $RUNNER_TEMP/ExportOptions.plist <<EXPORT_EOF
+        cat > $RUNNER_TEMP/ExportOptions.plist <<'EXPORT_EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -145,7 +145,7 @@ jobs:
           <false/>
         </dict>
         </plist>
-EXPORT_EOF
+        EXPORT_EOF
         
         xcodebuild -exportArchive \
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
@@ -254,7 +254,7 @@ EXPORT_EOF
           
     - name: Export IPA
       run: |
-        cat > $RUNNER_TEMP/ExportOptions.plist <<EXPORT_EOF
+        cat > $RUNNER_TEMP/ExportOptions.plist <<'EXPORT_EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -269,7 +269,7 @@ EXPORT_EOF
           <false/>
         </dict>
         </plist>
-EXPORT_EOF
+        EXPORT_EOF
         
         xcodebuild -exportArchive \
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
