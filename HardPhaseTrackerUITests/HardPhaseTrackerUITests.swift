@@ -88,7 +88,13 @@ final class HardPhaseTrackerUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.otherElements["dashboard.weightTrend"].waitForExistence(timeout: 2))
+        // Weight card might be below the fold on first launch with onboarding visible
+        let weightCard = app.otherElements["dashboard.weightTrend"]
+        if !weightCard.waitForExistence(timeout: 2) {
+            // Scroll down to find the weight card
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(weightCard.waitForExistence(timeout: 2))
     }
 
     @MainActor
