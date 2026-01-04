@@ -37,7 +37,7 @@ jobs:
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
-          -testPlan HardPhaseTrackerTests \
+          -only-testing:HardPhaseTrackerTests \
           -quiet
           
     - name: Run UI tests
@@ -46,7 +46,7 @@ jobs:
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
-          -testPlan HardPhaseTrackerUITests \
+          -only-testing:HardPhaseTrackerUITests \
           -quiet
       continue-on-error: true
       
