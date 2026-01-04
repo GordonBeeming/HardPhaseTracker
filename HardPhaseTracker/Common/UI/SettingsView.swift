@@ -62,6 +62,9 @@ struct SettingsView: View {
                         Label(t.rawValue, systemImage: t.systemImage)
                     }
                     .navigationTitle("Settings")
+                    .safeAreaInset(edge: .bottom) {
+                        versionFooter
+                    }
                 } detail: {
                     settingsDetail(tab: currentTab)
                 }
@@ -80,6 +83,9 @@ struct SettingsView: View {
                     .navigationTitle("Settings")
                     .navigationDestination(for: SectionTab.self) { t in
                         settingsDetail(tab: t)
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        versionFooter
                     }
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -295,6 +301,9 @@ struct SettingsView: View {
             }
         }
         .navigationTitle(tab.rawValue)
+        .safeAreaInset(edge: .bottom) {
+            versionFooter
+        }
         .task {
             if tab == .health {
                 await health.refreshPermissionOnly()
@@ -366,6 +375,20 @@ struct SettingsView: View {
         }
         if hours == 1 { return "1 hour" }
         return String(format: "%.1f hours", hours)
+    }
+    
+    private var versionFooter: some View {
+        VStack(spacing: 4) {
+            Text(AppVersion.fullVersionString)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Text("© 2026 Gordon Beeming")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 }
 

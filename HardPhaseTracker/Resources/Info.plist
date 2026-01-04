@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>HardPhase Tracker</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>HardPhase Tracker reads your weight, body fat, and sleep from Apple Health to show trends in the app.</string>
+	<string>HardPhase Tracker reads your weight, body fat percentage, and sleep data from Apple Health to display personalized health trends and insights in the app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

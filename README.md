@@ -1,5 +1,7 @@
 # HardPhase Tracker
 
+NOTE: This app is nearly 100% vibe coded. 1 day I may clean up the codebase and add proper documentation.
+
 A minimalist fasting tracker for iPhone + iPad.
 
 > **Status:** early build (actively changing).

@@ -302,8 +302,16 @@ Each section below is “done” when:
 
 ## Milestone 10 — Release Checklist (when we decide to ship)
 
-- [ ] Confirm PR-based workflow (squash merge) for all changes
-- [ ] Versioning (CFBundleShortVersionString + build number)
-- [ ] App icon final + branding
-- [ ] Privacy strings (HealthKit usage descriptions) reviewed
-- [ ] Basic App Store metadata (even if not submitting yet)
+- [x] Confirm PR-based workflow (squash merge) for all changes - ✅ Documented in README.md
+- [x] Versioning (CFBundleShortVersionString + build number) - ✅ Set to 1.0 (build 1) in project
+- [x] App icon final + branding - ✅ App icon created and present in Assets.xcassets
+- [x] Privacy strings (HealthKit usage descriptions) reviewed - ✅ Updated in Info.plist
+- [x] Basic App Store metadata (even if not submitting yet) - ✅ Created in docs/AppStoreMetadata.md
+
+### Additional Steps Before Submission:
+- [x] Create Privacy Policy URL - ✅ https://gordonbeeming.com/hardphasetracker/privacy-policy
+- [ ] Generate App Store screenshots (iPhone 6.7", iPad 12.9")
+- [ ] Test on physical devices (iPhone and iPad)
+- [ ] Run final test suite
+- [ ] Archive and upload to App Store Connect
+- [ ] Submit for review
