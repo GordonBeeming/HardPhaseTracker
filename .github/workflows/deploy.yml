@@ -29,9 +29,8 @@ jobs:
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
           -quiet \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGN_IDENTITY="-" \
+          DEVELOPMENT_TEAM=""
           
     - name: Run unit tests
       run: |
