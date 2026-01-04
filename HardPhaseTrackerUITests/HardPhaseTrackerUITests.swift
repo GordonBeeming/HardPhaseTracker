@@ -91,31 +91,10 @@ final class HardPhaseTrackerUITests: XCTestCase {
         // Wait for dashboard to be ready
         _ = app.navigationBars["Dashboard"].waitForExistence(timeout: 5)
         
-        // The weight card should render (it's not conditional)
-        // It might be below the viewport, so scroll to find it
-        let weightCard = app.otherElements["dashboard.weightTrend"]
+        // Try different element types - VStack with accessibilityIdentifier can be queried different ways
+        let weightCard = app.descendants(matching: .any).matching(identifier: "dashboard.weightTrend").firstMatch
         
-        // First check if it's immediately visible
-        if weightCard.waitForExistence(timeout: 2) {
-            XCTAssertTrue(true)
-            return
-        }
-        
-        // If not visible, scroll down to find it
-        let scrollView = app.scrollViews.firstMatch
-        if scrollView.exists {
-            // Scroll down multiple times with delays to ensure content loads
-            for attempt in 0..<5 {
-                scrollView.swipeUp()
-                sleep(UInt32(1))
-                if weightCard.exists {
-                    XCTAssertTrue(true)
-                    return
-                }
-            }
-        }
-        
-        XCTFail("Weight card should be visible on dashboard after scrolling")
+        XCTAssertTrue(weightCard.waitForExistence(timeout: 5), "Weight card should be visible on dashboard")
     }
 
     @MainActor
