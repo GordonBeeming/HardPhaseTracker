@@ -24,7 +24,7 @@ jobs:
         xcodebuild clean build-for-testing \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
+          -destination 'platform=iOS Simulator,OS=latest,name=iPhone 15' \
           -quiet \
           -skipPackagePluginValidation \
           DEVELOPMENT_TEAM="" \
@@ -36,7 +36,7 @@ jobs:
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
+          -destination 'platform=iOS Simulator,OS=latest,name=iPhone 15' \
           -quiet
           
     - name: Run UI tests
@@ -44,7 +44,7 @@ jobs:
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
+          -destination 'platform=iOS Simulator,OS=latest,name=iPhone 15' \
           -quiet
       continue-on-error: true
       
