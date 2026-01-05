@@ -37,6 +37,16 @@ jobs:
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -only-testing:HardPhaseTrackerTests \
+          -quiet
+          
+    - name: Run unit tests (iPad)
+      run: |
+        xcodebuild test-without-building \
+          -project HardPhaseTracker.xcodeproj \
+          -scheme HardPhaseTracker \
+          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+          -only-testing:HardPhaseTrackerTests \
           -quiet
           
     - name: Run UI tests (iPhone)
@@ -45,23 +55,17 @@ jobs:
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -only-testing:HardPhaseTrackerUITests \
           -quiet
       continue-on-error: true
       
-    - name: Run unit tests (iPad)
-      run: |
-        xcodebuild test-without-building \
-          -project HardPhaseTracker.xcodeproj \
-          -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
-          -quiet
-          
     - name: Run UI tests (iPad)
       run: |
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
           -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+          -only-testing:HardPhaseTrackerUITests \
           -quiet
       continue-on-error: true
       
