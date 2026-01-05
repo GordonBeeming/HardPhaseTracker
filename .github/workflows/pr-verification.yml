@@ -28,20 +28,37 @@ jobs:
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO
           
-    - name: Run unit tests
+    - name: Run unit tests (iPhone)
       run: |
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
           -quiet
           
-    - name: Run UI tests
+    - name: Run UI tests (iPhone)
       run: |
         xcodebuild test-without-building \
           -project HardPhaseTracker.xcodeproj \
           -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -quiet
+      continue-on-error: true
+      
+    - name: Run unit tests (iPad)
+      run: |
+        xcodebuild test-without-building \
+          -project HardPhaseTracker.xcodeproj \
+          -scheme HardPhaseTracker \
+          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+          -quiet
+          
+    - name: Run UI tests (iPad)
+      run: |
+        xcodebuild test-without-building \
+          -project HardPhaseTracker.xcodeproj \
+          -scheme HardPhaseTracker \
+          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
           -quiet
       continue-on-error: true
       
