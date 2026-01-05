@@ -16,19 +16,6 @@ jobs:
       with:
         fetch-depth: 0
       
-    - name: Select Xcode 18
-      run: |
-        # List available Xcode versions and select the latest Xcode 18.x
-        ls -d /Applications/Xcode*.app 2>/dev/null || true
-        XCODE_PATH=$(ls -d /Applications/Xcode_18*.app 2>/dev/null | sort -V | tail -1)
-        if [ -z "$XCODE_PATH" ]; then
-          echo "No Xcode 18.x found, using default"
-          xcodebuild -version
-        else
-          echo "Selecting $XCODE_PATH"
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
-        fi
-      
     - name: Show Xcode version
       run: xcodebuild -version
       
@@ -81,19 +68,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
-    - name: Select Xcode 18
-      run: |
-        # List available Xcode versions and select the latest Xcode 18.x
-        ls -d /Applications/Xcode*.app 2>/dev/null || true
-        XCODE_PATH=$(ls -d /Applications/Xcode_18*.app 2>/dev/null | sort -V | tail -1)
-        if [ -z "$XCODE_PATH" ]; then
-          echo "No Xcode 18.x found, using default"
-          xcodebuild -version
-        else
-          echo "Selecting $XCODE_PATH"
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
-        fi
         
     - name: Import signing certificates
       env:
@@ -215,19 +189,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-      
-    - name: Select Xcode 18
-      run: |
-        # List available Xcode versions and select the latest Xcode 18.x
-        ls -d /Applications/Xcode*.app 2>/dev/null || true
-        XCODE_PATH=$(ls -d /Applications/Xcode_18*.app 2>/dev/null | sort -V | tail -1)
-        if [ -z "$XCODE_PATH" ]; then
-          echo "No Xcode 18.x found, using default"
-          xcodebuild -version
-        else
-          echo "Selecting $XCODE_PATH"
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
-        fi
       
     - name: Import signing certificates
       env:
