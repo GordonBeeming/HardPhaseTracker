@@ -54,8 +54,7 @@ jobs:
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
           -only-testing:HardPhaseTrackerUITests \
           -quiet
-      continue-on-error: true
-      
+          
     - name: Run UI tests (iPad)
       run: |
         xcodebuild test-without-building \
@@ -64,8 +63,7 @@ jobs:
           -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
           -only-testing:HardPhaseTrackerUITests \
           -quiet
-      continue-on-error: true
-      
+          
     - name: Archive test results
       if: always()
       uses: actions/upload-artifact@v4
