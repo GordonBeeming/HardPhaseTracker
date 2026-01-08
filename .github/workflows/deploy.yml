@@ -123,15 +123,18 @@ jobs:
     - name: Set build number
       run: |
         BUILD_NUMBER=${{ github.run_number }}
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" HardPhaseTracker/Resources/Info.plist
-        
-        VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" HardPhaseTracker/Resources/Info.plist)
         COMMIT_HASH=$(git rev-parse --short HEAD)
+        
+        # Get version from project settings
+        VERSION=$(xcodebuild -project HardPhaseTracker.xcodeproj -showBuildSettings | grep MARKETING_VERSION | awk '{print $3}' | head -1)
         
         echo "Version: $VERSION"
         echo "Build: $BUILD_NUMBER"
         echo "Commit: $COMMIT_HASH"
         echo "Environment: Beta (TestFlight)"
+        
+        # Export for use in archive step
+        echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
         
     - name: Archive app
       run: |
@@ -141,6 +144,7 @@ jobs:
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
           -configuration Release \
           -destination 'generic/platform=iOS' \
+          CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Manual \
           CODE_SIGN_IDENTITY="${{ secrets.CODE_SIGN_IDENTITY }}" \
@@ -244,15 +248,18 @@ jobs:
     - name: Set build number
       run: |
         BUILD_NUMBER=${{ github.run_number }}
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" HardPhaseTracker/Resources/Info.plist
-        
-        VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" HardPhaseTracker/Resources/Info.plist)
         COMMIT_HASH=$(git rev-parse --short HEAD)
+        
+        # Get version from project settings
+        VERSION=$(xcodebuild -project HardPhaseTracker.xcodeproj -showBuildSettings | grep MARKETING_VERSION | awk '{print $3}' | head -1)
         
         echo "Version: $VERSION"
         echo "Build: $BUILD_NUMBER"
         echo "Commit: $COMMIT_HASH"
         echo "Environment: Production (App Store)"
+        
+        # Export for use in archive step
+        echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
         
     - name: Archive app
       run: |
@@ -262,6 +269,7 @@ jobs:
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
           -configuration Release \
           -destination 'generic/platform=iOS' \
+          CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Manual \
           CODE_SIGN_IDENTITY="${{ secrets.CODE_SIGN_IDENTITY }}" \
