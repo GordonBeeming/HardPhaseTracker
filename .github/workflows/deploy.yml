@@ -16,8 +16,10 @@ jobs:
       with:
         fetch-depth: 0
       
-    - name: Show Xcode version
-      run: xcodebuild -version
+    - name: Show Xcode and SDK version
+      run: |
+        xcodebuild -version
+        xcrun simctl list devices available
       
     - name: Build for testing
       run: |

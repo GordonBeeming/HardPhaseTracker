@@ -13,8 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Show Xcode version
-      run: xcodebuild -version
+    - name: Show Xcode and SDK version
+      run: |
+        xcodebuild -version
+        xcrun simctl list devices available
       
     - name: Build for testing
       run: |
