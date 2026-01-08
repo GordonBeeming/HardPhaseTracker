@@ -104,7 +104,7 @@ jobs:
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
         echo "$CERTIFICATES_P12" | base64 --decode > certificate.p12
-        security import certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATES_PASSWORD" -T /usr/bin/codesign
+        security import certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATES_PASSWORD" -A
         security list-keychain -d user -s $KEYCHAIN_PATH
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
@@ -235,7 +235,7 @@ jobs:
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
         echo "$CERTIFICATES_P12" | base64 --decode > certificate.p12
-        security import certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATES_PASSWORD" -T /usr/bin/codesign
+        security import certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATES_PASSWORD" -A
         security list-keychain -d user -s $KEYCHAIN_PATH
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
