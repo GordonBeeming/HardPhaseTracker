@@ -190,21 +190,12 @@ jobs:
           -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
           
     - name: Upload to TestFlight
-      env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
-        APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-      run: |
-        mkdir -p ~/.appstoreconnect/private_keys
-        echo "$APP_STORE_CONNECT_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
-        
-        xcrun altool --upload-app \
-          --type ios \
-          --file $RUNNER_TEMP/export/HardPhaseTracker.ipa \
-          --apiKey $APP_STORE_CONNECT_API_KEY_ID \
-          --apiIssuer $APP_STORE_CONNECT_ISSUER_ID
-          
-        echo "✅ Build uploaded to TestFlight"
+      uses: apple-actions/upload-testflight-build@v1
+      with:
+        app-path: ${{ runner.temp }}/export/HardPhaseTracker.ipa
+        issuer-id: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
+        api-key-id: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
+        api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         
     - name: Clean up
       if: always()
@@ -330,22 +321,12 @@ jobs:
           -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
           
     - name: Upload to App Store Connect
-      env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
-        APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-      run: |
-        mkdir -p ~/.appstoreconnect/private_keys
-        echo "$APP_STORE_CONNECT_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
-        
-        xcrun altool --upload-app \
-          --type ios \
-          --file $RUNNER_TEMP/export/HardPhaseTracker.ipa \
-          --apiKey $APP_STORE_CONNECT_API_KEY_ID \
-          --apiIssuer $APP_STORE_CONNECT_ISSUER_ID
-          
-        echo "✅ Build uploaded to App Store Connect"
-        echo "⚠️  Complete submission in App Store Connect"
+      uses: apple-actions/upload-testflight-build@v1
+      with:
+        app-path: ${{ runner.temp }}/export/HardPhaseTracker.ipa
+        issuer-id: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
+        api-key-id: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
+        api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         
     - name: Clean up
       if: always()
