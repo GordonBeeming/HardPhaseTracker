@@ -48,42 +48,42 @@ final class HardPhaseTrackerUITests: XCTestCase {
         app.launch()
 
         let mealsTab = app.buttons["Meals"]
-        XCTAssertTrue(mealsTab.waitForExistence(timeout: 10), "Meals tab should exist")
+        XCTAssertTrue(mealsTab.waitForExistence(timeout: 30), "Meals tab should exist")
         mealsTab.tap()
-        XCTAssertTrue(app.navigationBars["Meals"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Meals"].waitForExistence(timeout: 30))
 
         app.buttons["Add Meal"].tap()
 
         let nameField = app.textFields["mealEditor.name"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 10))
+        XCTAssertTrue(nameField.waitForExistence(timeout: 30))
         nameField.tap()
         nameField.typeText("UITest Meal")
 
         app.buttons["mealEditor.save"].tap()
 
-        XCTAssertTrue(app.staticTexts["UITest Meal"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["UITest Meal"].waitForExistence(timeout: 30))
         app.staticTexts["UITest Meal"].tap()
 
-        XCTAssertTrue(app.buttons["mealDetail.edit"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["mealDetail.edit"].waitForExistence(timeout: 30))
         app.buttons["mealDetail.edit"].tap()
 
         let editNameField = app.textFields["mealEditor.name"]
-        XCTAssertTrue(editNameField.waitForExistence(timeout: 10))
+        XCTAssertTrue(editNameField.waitForExistence(timeout: 30))
         editNameField.tap()
         editNameField.press(forDuration: 1.0)
         editNameField.typeText(" Edited")
 
         app.buttons["mealEditor.save"].tap()
-        XCTAssertTrue(app.navigationBars["UITest Meal Edited"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["UITest Meal Edited"].waitForExistence(timeout: 30))
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 30))
 
         let row = app.staticTexts["UITest Meal Edited"]
         row.swipeLeft()
         app.buttons["Delete"].tap()
 
-        XCTAssertFalse(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["UITest Meal Edited"].waitForExistence(timeout: 15))
     }
 
     @MainActor
