@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 
 @Model
@@ -29,6 +30,11 @@ final class AppSettings {
     // Analysis (optional for migration safety)
     var weeklyProteinGoalGrams: Double? // 0 == off
 
+    // Health monitoring (optional for migration safety)
+    var weightGoalKg: Double? // nil == not set
+    var healthMonitoringStartDate: Date? // nil == use first app launch date
+    var healthDataMaxPullDays: Int? // nil == use default (90 days)
+
     init(
         selectedSchedule: EatingWindowSchedule? = nil,
         alwaysShowLogMealButton: Bool = false,
@@ -41,7 +47,10 @@ final class AppSettings {
         electrolyteTemplates: [MealTemplate] = [],
         electrolyteSelectionMode: String = "fixed",
         unitSystem: String = "metric",
-        weeklyProteinGoalGrams: Double = 0
+        weeklyProteinGoalGrams: Double = 0,
+        weightGoalKg: Double? = nil,
+        healthMonitoringStartDate: Date? = nil,
+        healthDataMaxPullDays: Int? = nil
     ) {
         self.selectedSchedule = selectedSchedule
         self.alwaysShowLogMealButton = alwaysShowLogMealButton
@@ -55,5 +64,8 @@ final class AppSettings {
         self.electrolyteSelectionMode = electrolyteSelectionMode
         self.unitSystem = unitSystem
         self.weeklyProteinGoalGrams = weeklyProteinGoalGrams
+        self.weightGoalKg = weightGoalKg
+        self.healthMonitoringStartDate = healthMonitoringStartDate
+        self.healthDataMaxPullDays = healthDataMaxPullDays
     }
 }

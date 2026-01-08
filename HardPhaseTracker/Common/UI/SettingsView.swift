@@ -54,6 +54,11 @@ struct SettingsView: View {
     // Analysis
     @State private var weeklyProteinGoalGrams: Int = 0
 
+    // Health
+    @State private var weightGoalDisplay: Double = 0 // Display value in user's unit
+    @State private var healthMonitoringStartDate: Date = Date()
+    @State private var healthDataMaxPullDays: Int = 90
+
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
@@ -111,6 +116,12 @@ struct SettingsView: View {
 
             weeklyProteinGoalGrams = Int(current.weeklyProteinGoalGrams ?? 0)
 
+            let weightGoalKg = current.weightGoalKg ?? 0
+            weightGoalDisplay = unitSystem == .metric ? weightGoalKg : weightGoalKg * 2.20462262
+
+            healthMonitoringStartDate = current.healthMonitoringStartDate ?? Date()
+            healthDataMaxPullDays = current.healthDataMaxPullDays ?? 90
+
             electrolyteServingsPerDay = ElectrolyteTargetService.servingsPerDay(for: Date(), targets: electrolyteTargets)
             electrolyteAskEachTime = (current.electrolyteSelectionMode ?? "fixed") == "askEachTime"
 
@@ -131,7 +142,22 @@ struct SettingsView: View {
         }
         .onChange(of: electrolyteAskEachTime) { _, _ in save() }
         .onChange(of: weeklyProteinGoalGrams) { _, _ in save() }
-        .onChange(of: unitSystem) { _, _ in save() }
+        .onChange(of: unitSystem) { oldValue, newValue in
+            // Convert weight goal display when unit system changes
+            if oldValue != newValue {
+                if newValue == .imperial {
+                    // metric -> imperial
+                    weightGoalDisplay = weightGoalDisplay * 2.20462262
+                } else {
+                    // imperial -> metric
+                    weightGoalDisplay = weightGoalDisplay / 2.20462262
+                }
+            }
+            save()
+        }
+        .onChange(of: weightGoalDisplay) { _, _ in save() }
+        .onChange(of: healthMonitoringStartDate) { _, _ in save() }
+        .onChange(of: healthDataMaxPullDays) { _, _ in save() }
     }
 
     private var currentTab: SectionTab {
@@ -239,6 +265,45 @@ struct SettingsView: View {
                 }
 
             case .health:
+                Section("Weight goal") {
+                    HStack {
+                        Text("Goal")
+                        Spacer()
+                        TextField("Weight goal", value: $weightGoalDisplay, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 100)
+                        Text(unitSystem == .metric ? "kg" : "lb")
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    if weightGoalDisplay == 0 {
+                        Text("Set your weight goal to optimize the dashboard chart view")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Health monitoring") {
+                    DatePicker("Journey start date", selection: $healthMonitoringStartDate, displayedComponents: .date)
+                    
+                    Text("Only health data from this date onwards will be shown")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("Max data to pull", selection: $healthDataMaxPullDays) {
+                        Text("30 days").tag(30)
+                        Text("60 days").tag(60)
+                        Text("90 days").tag(90)
+                        Text("180 days").tag(180)
+                        Text("1 year").tag(365)
+                    }
+                    
+                    Text("Limits how far back to query HealthKit for performance")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Apple Health") {
                     switch health.permission {
                     case .notAvailable:
@@ -282,7 +347,12 @@ struct SettingsView: View {
                         LabeledContent("Sleep nights", value: "\(health.sleepLast7Nights.count)")
 
                         Button("Refresh from Apple Health") {
-                            Task { await health.refresh() }
+                            Task { 
+                                await health.refresh(
+                                    maxDays: healthDataMaxPullDays,
+                                    startDate: healthMonitoringStartDate
+                                )
+                            }
                         }
 
                         Button("Clear cached data", role: .destructive) {
@@ -329,6 +399,12 @@ struct SettingsView: View {
 
         current.unitSystem = unitSystem.rawValue
         current.weeklyProteinGoalGrams = Double(weeklyProteinGoalGrams)
+
+        // Convert weight goal display to kg for storage
+        let weightGoalKg = unitSystem == .metric ? weightGoalDisplay : weightGoalDisplay / 2.20462262
+        current.weightGoalKg = weightGoalKg > 0 ? weightGoalKg : nil
+        current.healthMonitoringStartDate = healthMonitoringStartDate
+        current.healthDataMaxPullDays = healthDataMaxPullDays
 
         modelContext.saveLogged()
     }

@@ -113,6 +113,7 @@ struct DashboardView: View {
                     DashboardWeightTrendCardView(
                         health: health,
                         unitSystem: appSettings?.unitSystemEnum ?? .metric,
+                        weightGoalKg: appSettings?.weightGoalKg,
                         onOpenSettings: { isShowingSettings = true }
                     )
                     .padding(.horizontal)
@@ -147,7 +148,9 @@ struct DashboardView: View {
         }
         .appScreen()
         .task {
-            await health.refreshIfCacheStale()
+            let maxDays = appSettings?.healthDataMaxPullDays ?? 90
+            let startDate = appSettings?.healthMonitoringStartDate
+            await health.refreshIfCacheStale(maxDays: maxDays, startDate: startDate)
         }
         .sheet(isPresented: $isLoggingMeal) {
             MealQuickLogView {
@@ -178,6 +181,7 @@ private struct DashboardWeightTrendCardView: View {
 
     @ObservedObject var health: HealthKitViewModel
     let unitSystem: UnitSystem
+    let weightGoalKg: Double?
     let onOpenSettings: () -> Void
 
     var body: some View {
@@ -194,6 +198,17 @@ private struct DashboardWeightTrendCardView: View {
                 }
             }
 
+            // Show weight loss info if we have first and latest weight
+            if let first = health.firstWeight, let latest = health.latestWeight {
+                let lostKg = first.kilograms - latest.kilograms
+                if lostKg > 0 {
+                    let duration = formatDuration(from: first.date, to: latest.date)
+                    Text("Lost \(formatWeight(kilograms: lostKg)) in \(duration)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if let bf = health.latestBodyFat {
                 Text(String(format: "Body fat %.1f%%", bf.percent))
                     .font(.footnote)
@@ -202,12 +217,13 @@ private struct DashboardWeightTrendCardView: View {
 
             switch health.permission {
             case .authorized:
-                if health.weightsLast7Days.isEmpty {
+                if health.weightsLast14Days.isEmpty {
                     Text("No weight data yet. Add weight in Apple Health, then refresh.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
-                    Chart(health.weightsLast7Days) { s in
+                    let yBounds = calculateYAxisBounds()
+                    Chart(health.weightsLast14Days) { s in
                         LineMark(
                             x: .value("Date", s.date),
                             y: .value("Weight", displayValue(kilograms: s.kilograms))
@@ -219,7 +235,14 @@ private struct DashboardWeightTrendCardView: View {
                             y: .value("Weight", displayValue(kilograms: s.kilograms))
                         )
                     }
+                    .chartYScale(domain: yBounds.min...yBounds.max)
                     .frame(height: 120)
+
+                    if weightGoalKg == nil {
+                        Text("Set a weight goal in Settings to optimize chart view")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
             case .notAvailable:
@@ -244,6 +267,51 @@ private struct DashboardWeightTrendCardView: View {
                 .fill(AppTheme.cardBackground(colorScheme))
         )
         .accessibilityIdentifier("dashboard.weightTrend")
+    }
+
+    private func calculateYAxisBounds() -> (min: Double, max: Double) {
+        let weights = health.weightsLast14Days.map { displayValue(kilograms: $0.kilograms) }
+        guard let dataMin = weights.min(), let dataMax = weights.max() else {
+            return (min: 0, max: 100)
+        }
+
+        // Calculate lower bound: highest of (goal - 5) OR (2 weeks ago weight - 20)
+        var lowerBound = dataMin - 20
+
+        if let goalKg = weightGoalKg {
+            let goalDisplay = displayValue(kilograms: goalKg)
+            let goalBasedLower = goalDisplay - 5
+            lowerBound = max(lowerBound, goalBasedLower)
+        }
+
+        // Ensure bounds are reasonable and add some padding
+        let padding = (dataMax - dataMin) * 0.1
+        let finalMin = max(0, lowerBound - padding)
+        let finalMax = dataMax + padding
+
+        return (min: finalMin, max: finalMax)
+    }
+
+    private func formatDuration(from start: Date, to end: Date) -> String {
+        let days = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
+
+        if days < 7 {
+            return days == 1 ? "1 day" : "\(days) days"
+        } else if days < 30 {
+            let weeks = days / 7
+            return weeks == 1 ? "1 week" : "\(weeks) weeks"
+        } else if days < 365 {
+            let months = days / 30
+            return months == 1 ? "1 month" : "\(months) months"
+        } else {
+            let years = days / 365
+            let remainingMonths = (days % 365) / 30
+            if remainingMonths == 0 {
+                return years == 1 ? "1 year" : "\(years) years"
+            } else {
+                return "\(years)y \(remainingMonths)m"
+            }
+        }
     }
 
     private func displayValue(kilograms: Double) -> Double {

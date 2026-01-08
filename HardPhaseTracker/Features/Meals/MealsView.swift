@@ -9,7 +9,11 @@ struct MealsView: View {
     private var templates: [MealTemplate]
 
     @State private var isAdding = false
+    @State private var isDuplicating = false
+    @State private var templateToDuplicate: MealTemplate?
+    @State private var templateToNavigateTo: MealTemplate?
     @State private var isShowingSettings = false
+    @State private var selectedTemplate: MealTemplate?
 
     var body: some View {
         NavigationSplitView {
@@ -22,16 +26,23 @@ struct MealsView: View {
                     )
                     .background(AppTheme.background(colorScheme))
                 } else {
-                    List {
+                    List(selection: $selectedTemplate) {
                         ForEach(templates) { template in
-                            NavigationLink {
-                                MealTemplateDetailView(template: template)
-                            } label: {
+                            NavigationLink(value: template) {
                                 HStack(spacing: 10) {
                                     Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
                                         .foregroundStyle(.secondary)
                                     Text(template.name)
                                 }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    templateToDuplicate = template
+                                    isDuplicating = true
+                                } label: {
+                                    Label("Duplicate", systemImage: "doc.on.doc")
+                                }
+                                .tint(.blue)
                             }
                         }
                         .onDelete(perform: deleteTemplates)
@@ -61,11 +72,29 @@ struct MealsView: View {
                 }
             }
         } detail: {
-            ContentUnavailableView("Select a meal", systemImage: "fork.knife")
+            if let selected = selectedTemplate {
+                MealTemplateDetailView(template: selected)
+            } else {
+                ContentUnavailableView("Select a meal", systemImage: "fork.knife")
+            }
         }
         .appScreen()
         .sheet(isPresented: $isAdding) {
             MealTemplateEditorView()
+        }
+        .sheet(isPresented: $isDuplicating) {
+            // onDismiss: Navigate after sheet is fully dismissed
+            if let template = templateToNavigateTo {
+                selectedTemplate = template
+                templateToNavigateTo = nil
+            }
+        } content: {
+            if let template = templateToDuplicate {
+                MealTemplateEditorView(duplicateFrom: template) { savedTemplate in
+                    // Store for navigation after sheet dismisses
+                    templateToNavigateTo = savedTemplate
+                }
+            }
         }
         .sheet(isPresented: $isShowingSettings) {
             SettingsView()

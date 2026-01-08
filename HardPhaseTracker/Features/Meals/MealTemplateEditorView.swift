@@ -8,6 +8,7 @@ struct MealTemplateEditorView: View {
     @Query private var settings: [AppSettings]
 
     let templateToEdit: MealTemplate?
+    let onSave: ((MealTemplate) -> Void)?
 
     @State private var showUsedConfirm = false
     @State private var usedCount: Int = 0
@@ -19,15 +20,25 @@ struct MealTemplateEditorView: View {
     @State private var isElectrolyte: Bool
     @State private var components: [ComponentDraft]
 
-    init(template: MealTemplate? = nil) {
+    init(template: MealTemplate? = nil, duplicateFrom: MealTemplate? = nil, onSave: ((MealTemplate) -> Void)? = nil) {
+        // When duplicating, we don't set templateToEdit (it's a new meal)
         self.templateToEdit = template
+        self.onSave = onSave
+        
+        // Use duplicateFrom data if provided, otherwise use template
+        let sourceTemplate = duplicateFrom ?? template
 
-        _name = State(initialValue: template?.name ?? "")
-        _protein = State(initialValue: template.map { String($0.protein) } ?? "")
-        _carbs = State(initialValue: template.map { String($0.carbs) } ?? "")
-        _fats = State(initialValue: template.map { String($0.fats) } ?? "")
-        _isElectrolyte = State(initialValue: template?.kind == MealTemplateKind.electrolyte.rawValue)
-        _components = State(initialValue: template?.componentsList.map {
+        _name = State(initialValue: {
+            if let dup = duplicateFrom {
+                return dup.name + " copy"
+            }
+            return sourceTemplate?.name ?? ""
+        }())
+        _protein = State(initialValue: sourceTemplate.map { String($0.protein) } ?? "")
+        _carbs = State(initialValue: sourceTemplate.map { String($0.carbs) } ?? "")
+        _fats = State(initialValue: sourceTemplate.map { String($0.fats) } ?? "")
+        _isElectrolyte = State(initialValue: sourceTemplate?.kind == MealTemplateKind.electrolyte.rawValue)
+        _components = State(initialValue: sourceTemplate?.componentsList.map {
             ComponentDraft(name: $0.name, grams: String($0.grams), unit: $0.unit ?? "g")
         } ?? [])
     }
@@ -121,7 +132,8 @@ struct MealTemplateEditorView: View {
                             }
                         }
 
-                        saveUpdatingExisting()
+                        let saved = saveUpdatingExisting()
+                        onSave?(saved)
                         dismiss()
                     }
                     .accessibilityIdentifier("mealEditor.save")
@@ -135,12 +147,14 @@ struct MealTemplateEditorView: View {
             titleVisibility: .visible
         ) {
             Button("Update existing logged meals") {
-                saveUpdatingExisting()
+                let saved = saveUpdatingExisting()
+                onSave?(saved)
                 dismiss()
             }
 
             Button("Only apply to new meals") {
-                saveAsNewTemplate()
+                let saved = saveAsNewTemplate()
+                onSave?(saved)
                 dismiss()
             }
 
@@ -164,13 +178,15 @@ struct MealTemplateEditorView: View {
         components.remove(atOffsets: offsets)
     }
 
-    private func saveUpdatingExisting() {
+    private func saveUpdatingExisting() -> MealTemplate {
         let parsedProtein = Double(protein) ?? 0
         let parsedCarbs = Double(carbs) ?? 0
         let parsedFats = Double(fats) ?? 0
 
         let kind = isElectrolyte ? MealTemplateKind.electrolyte.rawValue : MealTemplateKind.meal.rawValue
 
+        let template: MealTemplate
+        
         if let templateToEdit {
             templateToEdit.name = name
             templateToEdit.protein = parsedProtein
@@ -182,8 +198,9 @@ struct MealTemplateEditorView: View {
             templateToEdit.components = components
                 .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                 .map { MealComponent(name: $0.name, grams: Double($0.grams) ?? 0, unit: $0.unit) }
+            template = templateToEdit
         } else {
-            let template = MealTemplate(
+            template = MealTemplate(
                 name: name,
                 protein: parsedProtein,
                 carbs: parsedCarbs,
@@ -197,9 +214,10 @@ struct MealTemplateEditorView: View {
         }
 
         modelContext.saveLogged()
+        return template
     }
 
-    private func saveAsNewTemplate() {
+    private func saveAsNewTemplate() -> MealTemplate {
         let parsedProtein = Double(protein) ?? 0
         let parsedCarbs = Double(carbs) ?? 0
         let parsedFats = Double(fats) ?? 0
@@ -218,6 +236,7 @@ struct MealTemplateEditorView: View {
         )
         modelContext.insert(template)
         modelContext.saveLogged()
+        return template
     }
 }
 

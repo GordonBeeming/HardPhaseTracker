@@ -90,10 +90,14 @@ final class HealthKitService {
         }
     }
 
-    func fetchWeightSamples(lastDays days: Int) async throws -> [WeightSample] {
+    func fetchWeightSamples(lastDays days: Int, startDate: Date? = nil) async throws -> [WeightSample] {
         guard let type = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return [] }
-        let start = HealthKitQuerySupport.startDateForLastDays(days)
-        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date(), options: [])
+        
+        // Calculate effective start date (respect both lastDays and monitoring start date).
+        let daysStart = HealthKitQuerySupport.startDateForLastDays(days)
+        let effectiveStart = startDate.map { max($0, daysStart) } ?? daysStart
+        
+        let predicate = HKQuery.predicateForSamples(withStart: effectiveStart, end: Date(), options: [])
         let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -104,6 +108,25 @@ final class HealthKitService {
                 }
                 let mapped = (samples as? [HKQuantitySample])?.map(HealthKitQuerySupport.mapWeight) ?? []
                 continuation.resume(returning: mapped)
+            }
+            store.execute(query)
+        }
+    }
+
+    func fetchFirstWeight(afterDate: Date? = nil) async throws -> WeightSample? {
+        guard let type = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return nil }
+        
+        let predicate = afterDate.map { HKQuery.predicateForSamples(withStart: $0, end: nil, options: []) }
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [sort]) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                let sample = (samples?.first as? HKQuantitySample).map(HealthKitQuerySupport.mapWeight)
+                continuation.resume(returning: sample)
             }
             store.execute(query)
         }

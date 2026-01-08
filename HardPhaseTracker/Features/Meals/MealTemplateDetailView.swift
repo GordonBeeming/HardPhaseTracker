@@ -3,6 +3,7 @@ import SwiftUI
 struct MealTemplateDetailView: View {
     let template: MealTemplate
     @State private var isEditing = false
+    @State private var isDuplicating = false
 
     var body: some View {
         List {
@@ -44,12 +45,29 @@ struct MealTemplateDetailView: View {
             }
 
             ToolbarItem(placement: .primaryAction) {
-                Button("Edit") { isEditing = true }
-                    .accessibilityIdentifier("mealDetail.edit")
+                Menu {
+                    Button {
+                        isEditing = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    
+                    Button {
+                        isDuplicating = true
+                    } label: {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Actions")
             }
         }
         .sheet(isPresented: $isEditing) {
             MealTemplateEditorView(template: template)
+        }
+        .sheet(isPresented: $isDuplicating) {
+            MealTemplateEditorView(duplicateFrom: template)
         }
     }
 }

@@ -15,6 +15,8 @@ final class HealthKitViewModel: ObservableObject {
     @Published private(set) var latestWeight: WeightSample?
     @Published private(set) var latestBodyFat: BodyFatSample?
     @Published private(set) var weightsLast7Days: [WeightSample] = []
+    @Published private(set) var weightsLast14Days: [WeightSample] = []
+    @Published private(set) var firstWeight: WeightSample?
     @Published private(set) var sleepLast7Nights: [SleepNight] = []
     @Published private(set) var errorMessage: String?
 
@@ -24,11 +26,13 @@ final class HealthKitViewModel: ObservableObject {
         var latestWeight: WeightSample?
         var latestBodyFat: BodyFatSample?
         var weightsLast7Days: [WeightSample]
+        var weightsLast14Days: [WeightSample]? // Optional for migration
+        var firstWeight: WeightSample? // Optional for migration
         var sleepLast7Nights: [SleepNight]
         var updatedAt: Date
     }
 
-    private static let cacheKey = "healthkit.cache.v1"
+    private static let cacheKey = "healthkit.cache.v2" // Bumped version for new fields
     private static let disconnectedKey = "healthkit.userDisconnected"
 
     @Published private(set) var cacheUpdatedAt: Date?
@@ -57,7 +61,7 @@ final class HealthKitViewModel: ObservableObject {
         }
     }
 
-    func refresh() async {
+    func refresh(maxDays: Int = 90, startDate: Date? = nil) async {
         errorMessage = nil
         await refreshPermission()
 
@@ -66,12 +70,16 @@ final class HealthKitViewModel: ObservableObject {
         do {
             async let w = service.fetchLatestWeight()
             async let bf = service.fetchLatestBodyFat()
-            async let w7 = service.fetchWeightSamples(lastDays: 7)
+            async let w7 = service.fetchWeightSamples(lastDays: min(7, maxDays), startDate: startDate)
+            async let w14 = service.fetchWeightSamples(lastDays: min(14, maxDays), startDate: startDate)
+            async let first = service.fetchFirstWeight(afterDate: startDate)
             async let s7 = service.fetchSleepNights(lastN: 7)
 
             latestWeight = try await w
             latestBodyFat = try await bf
             weightsLast7Days = try await w7
+            weightsLast14Days = try await w14
+            firstWeight = try await first
             sleepLast7Nights = try await s7
             saveCache()
         } catch {
@@ -79,15 +87,15 @@ final class HealthKitViewModel: ObservableObject {
         }
     }
 
-    func refreshIfCacheStale(maxAgeHours: Double = 12) async {
+    func refreshIfCacheStale(maxAgeHours: Double = 12, maxDays: Int = 90, startDate: Date? = nil) async {
         await refreshPermission()
         guard permission == .authorized else { return }
         guard !isDisconnected else { return }
 
         let last = cachedUpdatedAt()
         let age = Date().timeIntervalSince(last)
-        if weightsLast7Days.isEmpty || sleepLast7Nights.isEmpty || age > maxAgeHours * 3600 {
-            await refresh()
+        if weightsLast7Days.isEmpty || weightsLast14Days.isEmpty || sleepLast7Nights.isEmpty || age > maxAgeHours * 3600 {
+            await refresh(maxDays: maxDays, startDate: startDate)
         }
     }
 
@@ -101,6 +109,8 @@ final class HealthKitViewModel: ObservableObject {
         latestWeight = nil
         latestBodyFat = nil
         weightsLast7Days = []
+        weightsLast14Days = []
+        firstWeight = nil
         sleepLast7Nights = []
     }
 
@@ -137,14 +147,43 @@ final class HealthKitViewModel: ObservableObject {
     }
 
     private func loadCache() {
-        guard let data = UserDefaults.standard.data(forKey: Self.cacheKey) else { return }
+        guard let data = UserDefaults.standard.data(forKey: Self.cacheKey) else {
+            // Try loading old cache format (v1) and migrate
+            if let oldData = UserDefaults.standard.data(forKey: "healthkit.cache.v1"),
+               let oldPayload = try? JSONDecoder().decode(OldCachePayload.self, from: oldData) {
+                // Migrate v1 cache to current format
+                latestWeight = oldPayload.latestWeight
+                latestBodyFat = oldPayload.latestBodyFat
+                weightsLast7Days = oldPayload.weightsLast7Days
+                weightsLast14Days = [] // Will be fetched on next refresh
+                firstWeight = nil // Will be fetched on next refresh
+                sleepLast7Nights = oldPayload.sleepLast7Nights
+                cacheUpdatedAt = oldPayload.updatedAt
+                
+                // Clear old cache
+                UserDefaults.standard.removeObject(forKey: "healthkit.cache.v1")
+            }
+            return
+        }
+        
         guard let payload = try? JSONDecoder().decode(CachePayload.self, from: data) else { return }
 
         latestWeight = payload.latestWeight
         latestBodyFat = payload.latestBodyFat
         weightsLast7Days = payload.weightsLast7Days
+        weightsLast14Days = payload.weightsLast14Days ?? []
+        firstWeight = payload.firstWeight
         sleepLast7Nights = payload.sleepLast7Nights
         cacheUpdatedAt = payload.updatedAt
+    }
+
+    // Old cache format for migration
+    private struct OldCachePayload: Codable {
+        var latestWeight: WeightSample?
+        var latestBodyFat: BodyFatSample?
+        var weightsLast7Days: [WeightSample]
+        var sleepLast7Nights: [SleepNight]
+        var updatedAt: Date
     }
 
     private func saveCache() {
@@ -152,6 +191,8 @@ final class HealthKitViewModel: ObservableObject {
             latestWeight: latestWeight,
             latestBodyFat: latestBodyFat,
             weightsLast7Days: weightsLast7Days,
+            weightsLast14Days: weightsLast14Days,
+            firstWeight: firstWeight,
             sleepLast7Nights: sleepLast7Nights,
             updatedAt: Date()
         )
