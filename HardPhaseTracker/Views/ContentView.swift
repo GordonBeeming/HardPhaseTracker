@@ -11,6 +11,8 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
+    
+    @StateObject private var cloudKitSync = CloudKitSyncService()
 
     var body: some View {
         TabView {
@@ -37,6 +39,13 @@ struct ContentView: View {
         .tint(AppTheme.primary(colorScheme))
         .task {
             SeedSchedulesService.seedIfNeeded(modelContext: modelContext)
+            
+            // Request CloudKit sync on app launch (if online and stale)
+            cloudKitSync.requestSyncIfStale(modelContext: modelContext)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            // Also sync when app comes back to foreground
+            cloudKitSync.requestSyncIfStale(modelContext: modelContext)
         }
     }
 }
