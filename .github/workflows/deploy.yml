@@ -145,14 +145,15 @@ jobs:
           -configuration Release \
           -destination 'generic/platform=iOS' \
           CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
-          DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+          DEVELOPMENT_TEAM=${{ vars.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Manual \
-          CODE_SIGN_IDENTITY="${{ secrets.CODE_SIGN_IDENTITY }}" \
-          PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_NAME }}"
+          CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
+          PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}"
           
     - name: Export IPA
       run: |
-        cat > $RUNNER_TEMP/ExportOptions.plist <<'EXPORT_EOF'
+        echo "Creating ExportOptions.plist..."
+        cat > $RUNNER_TEMP/ExportOptions.plist <<EXPORT_EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -160,7 +161,7 @@ jobs:
           <key>method</key>
           <string>app-store</string>
           <key>teamID</key>
-          <string>${{ secrets.APPLE_TEAM_ID }}</string>
+          <string>${{ vars.APPLE_TEAM_ID }}</string>
           <key>uploadSymbols</key>
           <true/>
           <key>uploadBitcode</key>
@@ -169,6 +170,11 @@ jobs:
         </plist>
         EXPORT_EOF
         
+        echo "ExportOptions.plist contents:"
+        cat $RUNNER_TEMP/ExportOptions.plist
+        echo ""
+        
+        echo "Exporting archive..."
         xcodebuild -exportArchive \
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
           -exportPath $RUNNER_TEMP/export \
@@ -176,8 +182,8 @@ jobs:
           
     - name: Upload to TestFlight
       env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_API_KEY_ID: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
       run: |
         mkdir -p ~/.appstoreconnect/private_keys
@@ -270,14 +276,15 @@ jobs:
           -configuration Release \
           -destination 'generic/platform=iOS' \
           CURRENT_PROJECT_VERSION=${{ env.BUILD_NUMBER }} \
-          DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+          DEVELOPMENT_TEAM=${{ vars.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Manual \
-          CODE_SIGN_IDENTITY="${{ secrets.CODE_SIGN_IDENTITY }}" \
-          PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_NAME }}"
+          CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
+          PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}"
           
     - name: Export IPA
       run: |
-        cat > $RUNNER_TEMP/ExportOptions.plist <<'EXPORT_EOF'
+        echo "Creating ExportOptions.plist..."
+        cat > $RUNNER_TEMP/ExportOptions.plist <<EXPORT_EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
@@ -285,7 +292,7 @@ jobs:
           <key>method</key>
           <string>app-store</string>
           <key>teamID</key>
-          <string>${{ secrets.APPLE_TEAM_ID }}</string>
+          <string>${{ vars.APPLE_TEAM_ID }}</string>
           <key>uploadSymbols</key>
           <true/>
           <key>uploadBitcode</key>
@@ -294,6 +301,11 @@ jobs:
         </plist>
         EXPORT_EOF
         
+        echo "ExportOptions.plist contents:"
+        cat $RUNNER_TEMP/ExportOptions.plist
+        echo ""
+        
+        echo "Exporting archive..."
         xcodebuild -exportArchive \
           -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
           -exportPath $RUNNER_TEMP/export \
@@ -301,8 +313,8 @@ jobs:
           
     - name: Upload to App Store Connect
       env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_API_KEY_ID: ${{ vars.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
       run: |
         mkdir -p ~/.appstoreconnect/private_keys
