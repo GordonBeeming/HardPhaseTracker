@@ -6,6 +6,8 @@
 	<string>HardPhase Tracker</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>HardPhase Tracker reads your weight, body fat percentage, and sleep data from Apple Health to display personalized health trends and insights in the app.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>HardPhase Tracker writes health data to Apple Health to help you track your progress and maintain accurate health records.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
