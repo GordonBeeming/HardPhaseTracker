@@ -2,76 +2,80 @@ name: PR Verification
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     name: Build and Test
     runs-on: macos-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Show Xcode and SDK version
-      run: |
-        xcodebuild -version
-        xcrun simctl list devices available
-      
-    - name: Build for testing
-      run: |
-        xcodebuild clean build-for-testing \
-          -project HardPhaseTracker.xcodeproj \
-          -scheme HardPhaseTracker \
-          -destination 'generic/platform=iOS Simulator' \
-          -quiet \
-          -skipPackagePluginValidation \
-          DEVELOPMENT_TEAM="" \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO
-          
-    - name: Run unit tests (iPhone)
-      run: |
-        xcodebuild test-without-building \
-          -project HardPhaseTracker.xcodeproj \
-          -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-          -only-testing:HardPhaseTrackerTests \
-          -quiet
-          
-    - name: Run unit tests (iPad)
-      run: |
-        xcodebuild test-without-building \
-          -project HardPhaseTracker.xcodeproj \
-          -scheme HardPhaseTracker \
-          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
-          -only-testing:HardPhaseTrackerTests \
-          -quiet
-          
-    # UI tests disabled due to simulator instability in CI
-    # - name: Run UI tests (iPhone)
-    #   run: |
-    #     xcodebuild test-without-building \
-    #       -project HardPhaseTracker.xcodeproj \
-    #       -scheme HardPhaseTracker \
-    #       -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-    #       -only-testing:HardPhaseTrackerUITests \
-    #       -quiet
-    #       
-    # - name: Run UI tests (iPad)
-    #   run: |
-    #     xcodebuild test-without-building \
-    #       -project HardPhaseTracker.xcodeproj \
-    #       -scheme HardPhaseTracker \
-    #       -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
-    #       -only-testing:HardPhaseTrackerUITests \
-    #       -quiet
-          
-    - name: Archive test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: |
-          ~/Library/Developer/Xcode/DerivedData/*/Logs/Test/*.xcresult
-        retention-days: 7
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show Xcode and SDK version
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Build for testing
+        run: |
+          xcodebuild clean build-for-testing \
+            -project HardPhaseTracker.xcodeproj \
+            -scheme HardPhaseTracker \
+            -destination 'generic/platform=iOS Simulator' \
+            -quiet \
+            -skipPackagePluginValidation \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run unit tests (iPhone)
+        run: |
+          xcodebuild test-without-building \
+            -project HardPhaseTracker.xcodeproj \
+            -scheme HardPhaseTracker \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:HardPhaseTrackerTests \
+            -quiet
+
+      - name: Run unit tests (iPad)
+        run: |
+          xcodebuild test-without-building \
+            -project HardPhaseTracker.xcodeproj \
+            -scheme HardPhaseTracker \
+            -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+            -only-testing:HardPhaseTrackerTests \
+            -quiet
+
+      # UI tests disabled due to simulator instability in CI
+      # - name: Run UI tests (iPhone)
+      #   run: |
+      #     xcodebuild test-without-building \
+      #       -project HardPhaseTracker.xcodeproj \
+      #       -scheme HardPhaseTracker \
+      #       -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+      #       -only-testing:HardPhaseTrackerUITests \
+      #       -quiet
+      #
+      # - name: Run UI tests (iPad)
+      #   run: |
+      #     xcodebuild test-without-building \
+      #       -project HardPhaseTracker.xcodeproj \
+      #       -scheme HardPhaseTracker \
+      #       -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+      #       -only-testing:HardPhaseTrackerUITests \
+      #       -quiet
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/*/Logs/Test/*.xcresult
+          retention-days: 7
