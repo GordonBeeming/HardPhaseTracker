@@ -359,8 +359,12 @@ struct SettingsView: View {
                 if health.permission == .authorized {
                     Section("Cached data") {
                         LabeledContent("Last updated", value: health.cacheUpdatedAt?.formatted(date: .abbreviated, time: .shortened) ?? "Never")
-                        LabeledContent("Weight samples", value: "\(health.weightsLast7Days.count)")
-                        LabeledContent("Sleep nights", value: "\(health.sleepLast7Nights.count)")
+                        LabeledContent("Weight samples", value: "\(health.allWeights.count)")
+                        LabeledContent("Sleep nights", value: "\(health.allSleepNights.count)")
+                        
+                        Text("Shows all cached health data up to the configured max days")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
 
                         Button("Refresh from Apple Health") {
                             Task { 
