@@ -572,25 +572,66 @@ struct SettingsView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             
-            // Start accessing security-scoped resource (required for iCloud Drive)
-            guard url.startAccessingSecurityScopedResource() else {
-                importError = NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
-                    NSLocalizedDescriptionKey: "Unable to access the file. Please try again."
-                ])
-                showingImportResult = true
-                return
-            }
+            // For security-scoped resources, we need to access them
+            let needsSecurityScope = url.startAccessingSecurityScopedResource()
             
             defer {
-                url.stopAccessingSecurityScopedResource()
+                if needsSecurityScope {
+                    url.stopAccessingSecurityScopedResource()
+                }
             }
             
             do {
-                let data = try Data(contentsOf: url)
+                // Use NSFileCoordinator for more reliable file access (especially for iCloud files)
+                let coordinator = NSFileCoordinator()
+                var coordinationError: NSError?
+                var fileData: Data?
+                var readError: Error?
+                
+                coordinator.coordinate(readingItemAt: url, options: [.withoutChanges], error: &coordinationError) { coordinatedURL in
+                    do {
+                        fileData = try Data(contentsOf: coordinatedURL)
+                    } catch {
+                        readError = error
+                    }
+                }
+                
+                // Check for errors
+                if let error = coordinationError ?? readError {
+                    throw error
+                }
+                
+                guard let data = fileData else {
+                    throw NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                        NSLocalizedDescriptionKey: "Unable to read the file."
+                    ])
+                }
+                
+                // Validate it's valid JSON before showing confirmation
+                _ = try JSONSerialization.jsonObject(with: data)
+                
                 importedData = data
                 showingImportConfirmation = true
-            } catch {
-                importError = error
+            } catch let error as NSError {
+                // Provide more detailed error messages
+                if error.domain == NSCocoaErrorDomain {
+                    switch error.code {
+                    case 257, 260: // File read permission errors
+                        importError = NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                            NSLocalizedDescriptionKey: "Unable to read the file. Try these steps:\n1. Open Files app\n2. Find your backup file\n3. Long-press on it\n4. Tap 'Copy'\n5. Navigate to 'On My iPad' → HardPhase Tracker (if available) or Downloads\n6. Paste the file there\n7. Try importing again"
+                        ])
+                    case 258: // File doesn't exist
+                        importError = NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                            NSLocalizedDescriptionKey: "The selected file could not be found. If it's in iCloud, make sure it's fully downloaded (check for the cloud icon)."
+                        ])
+                    default:
+                        importError = NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                            NSLocalizedDescriptionKey: "Unable to read the file: \(error.localizedDescription)"
+                        ])
+                    }
+                } else {
+                    importError = error
+                }
                 showingImportResult = true
             }
             
