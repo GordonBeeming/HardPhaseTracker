@@ -158,8 +158,25 @@ jobs:
 
       - name: Embed commit hash in Info.plist
         run: |
-          INFO_PLIST="${RUNNER_TEMP}/HardPhaseTracker.xcarchive/Products/Applications/HardPhase Tracker.app/Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" || \
+          # Find the correct Info.plist path in the archive
+          ARCHIVE_PATH="${RUNNER_TEMP}/HardPhaseTracker.xcarchive"
+          
+          echo "Looking for Info.plist in archive..."
+          find "$ARCHIVE_PATH" -name "Info.plist" -type f
+          
+          # The Info.plist should be in the app bundle
+          APP_PATH=$(find "$ARCHIVE_PATH/Products" -name "*.app" -type d | head -1)
+          INFO_PLIST="${APP_PATH}/Info.plist"
+          
+          echo "Using Info.plist at: $INFO_PLIST"
+          
+          if [ ! -f "$INFO_PLIST" ]; then
+            echo "Error: Info.plist not found at $INFO_PLIST"
+            exit 1
+          fi
+          
+          # Add or update GitCommitHash
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
           /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
           
           echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
@@ -301,8 +318,25 @@ jobs:
 
       - name: Embed commit hash in Info.plist
         run: |
-          INFO_PLIST="${RUNNER_TEMP}/HardPhaseTracker.xcarchive/Products/Applications/HardPhase Tracker.app/Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" || \
+          # Find the correct Info.plist path in the archive
+          ARCHIVE_PATH="${RUNNER_TEMP}/HardPhaseTracker.xcarchive"
+          
+          echo "Looking for Info.plist in archive..."
+          find "$ARCHIVE_PATH" -name "Info.plist" -type f
+          
+          # The Info.plist should be in the app bundle
+          APP_PATH=$(find "$ARCHIVE_PATH/Products" -name "*.app" -type d | head -1)
+          INFO_PLIST="${APP_PATH}/Info.plist"
+          
+          echo "Using Info.plist at: $INFO_PLIST"
+          
+          if [ ! -f "$INFO_PLIST" ]; then
+            echo "Error: Info.plist not found at $INFO_PLIST"
+            exit 1
+          fi
+          
+          # Add or update GitCommitHash
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
           /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
           
           echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
