@@ -300,9 +300,11 @@ private struct DashboardWeightTrendCardView: View {
     private func formatDuration(from start: Date, to end: Date) -> String {
         let days = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
 
-        if days < 7 {
+        if days <= 21 {
+            // Show days for first 3 weeks
             return days == 1 ? "1 day" : "\(days) days"
-        } else if days < 30 {
+        } else if days < 84 {
+            // Show weeks from 3 weeks to 12 weeks (~3 months)
             let weeks = days / 7
             return weeks == 1 ? "1 week" : "\(weeks) weeks"
         } else if days < 365 {
