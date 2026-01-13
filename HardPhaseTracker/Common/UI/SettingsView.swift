@@ -18,6 +18,7 @@ struct SettingsView: View {
         case electrolytes = "Electrolytes"
         case analysis = "Analysis"
         case health = "Health"
+        case data = "Data"
 
         var id: String { rawValue }
 
@@ -28,12 +29,14 @@ struct SettingsView: View {
             case .electrolytes: "drop"
             case .analysis: "chart.line.uptrend.xyaxis"
             case .health: "heart"
+            case .data: "arrow.down.doc"
             }
         }
     }
 
     @State private var selectedTab: SectionTab? = .dashboard
     @StateObject private var health = HealthKitViewModel()
+    @StateObject private var cloudKitSync = CloudKitSyncService()
     @State private var isRefreshingHealth = false
 
     // Dashboard
@@ -59,6 +62,18 @@ struct SettingsView: View {
     @State private var weightGoalDisplay: Double = 0 // Display value in user's unit
     @State private var healthMonitoringStartDate: Date = Date()
     @State private var healthDataMaxPullDays: Int = 90
+    
+    // Data export/import
+    @State private var showingExportShare = false
+    @State private var showingImportPicker = false
+    @State private var showingImportConfirmation = false
+    @State private var showingImportResult = false
+    @State private var exportedData: Data?
+    @State private var importedData: Data?
+    @State private var importResult: DataExportImportService.ImportResult?
+    @State private var importError: Error?
+    @State private var isExporting = false
+    @State private var isImporting = false
 
     var body: some View {
         Group {
@@ -382,6 +397,74 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+            
+            case .data:
+                Section("iCloud Sync") {
+                    HStack {
+                        Label("Status", systemImage: syncStatusIcon)
+                            .foregroundStyle(syncStatusColor)
+                        Spacer()
+                        Text(cloudKitSync.syncStatusMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Button {
+                        cloudKitSync.requestSync(modelContext: modelContext)
+                    } label: {
+                        HStack {
+                            Label("Sync now", systemImage: "arrow.triangle.2.circlepath")
+                            if cloudKitSync.isSyncing {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                            }
+                        }
+                    }
+                    .disabled(!cloudKitSync.isOnline || cloudKitSync.isSyncing)
+                    
+                    Text("Data automatically syncs via iCloud when you're signed in and online. Note: TestFlight and production builds use separate CloudKit environments and do not sync with each other.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Section("Backup & Restore") {
+                    Button {
+                        exportData()
+                    } label: {
+                        HStack {
+                            Label("Export all data", systemImage: "square.and.arrow.up")
+                            if isExporting {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                            }
+                        }
+                    }
+                    .disabled(isExporting)
+                    
+                    Text("Creates a JSON backup file of all your data that you can save to iCloud Drive, Files, or share with other devices.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    
+                    Button {
+                        showingImportPicker = true
+                    } label: {
+                        HStack {
+                            Label("Import data", systemImage: "square.and.arrow.down")
+                            if isImporting {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                            }
+                        }
+                    }
+                    .disabled(isImporting)
+                    
+                    Text("Import a previously exported backup file. This will replace all existing data.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .navigationTitle(tab.rawValue)
@@ -391,6 +474,43 @@ struct SettingsView: View {
         .task {
             if tab == .health {
                 await health.refreshPermissionOnly()
+            } else if tab == .data {
+                // Trigger initial sync check when viewing data tab
+                cloudKitSync.requestSyncIfStale(modelContext: modelContext)
+            }
+        }
+        .sheet(isPresented: $showingExportShare) {
+            if let data = exportedData {
+                ShareSheet(items: [data], filename: DataExportImportService.generateExportFilename())
+            }
+        }
+        .fileImporter(
+            isPresented: $showingImportPicker,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportSelection(result)
+        }
+        .alert("Import Data", isPresented: $showingImportConfirmation) {
+            Button("Cancel", role: .cancel) {
+                importedData = nil
+            }
+            Button("Import", role: .destructive) {
+                performImport()
+            }
+        } message: {
+            Text("This will replace all existing data with the imported backup. This action cannot be undone. Make sure to export your current data first if you want to keep it.")
+        }
+        .alert("Import Complete", isPresented: $showingImportResult) {
+            Button("OK") {
+                importResult = nil
+                importError = nil
+            }
+        } message: {
+            if let error = importError {
+                Text("Import failed: \(error.localizedDescription)")
+            } else if let result = importResult {
+                Text(result.summary)
             }
         }
     }
@@ -421,6 +541,75 @@ struct SettingsView: View {
         current.healthDataMaxPullDays = healthDataMaxPullDays
 
         modelContext.saveLogged()
+    }
+    
+    private func exportData() {
+        isExporting = true
+        
+        Task {
+            do {
+                let data = try DataExportImportService.exportAllData(modelContext: modelContext)
+                await MainActor.run {
+                    exportedData = data
+                    showingExportShare = true
+                    isExporting = false
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                }
+                // TODO: Show error alert
+            }
+        }
+    }
+    
+    private func handleImportSelection(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            
+            do {
+                let data = try Data(contentsOf: url)
+                importedData = data
+                showingImportConfirmation = true
+            } catch {
+                importError = error
+                showingImportResult = true
+            }
+            
+        case .failure(let error):
+            importError = error
+            showingImportResult = true
+        }
+    }
+    
+    private func performImport() {
+        guard let data = importedData else { return }
+        
+        isImporting = true
+        
+        Task {
+            do {
+                let result = try DataExportImportService.importAllData(
+                    from: data,
+                    into: modelContext,
+                    mergeStrategy: .replace
+                )
+                await MainActor.run {
+                    importResult = result
+                    importedData = nil
+                    isImporting = false
+                    showingImportResult = true
+                }
+            } catch {
+                await MainActor.run {
+                    importError = error
+                    importedData = nil
+                    isImporting = false
+                    showingImportResult = true
+                }
+            }
+        }
     }
 
     private var exampleText: String {
@@ -465,6 +654,24 @@ struct SettingsView: View {
         }
         if hours == 1 { return "1 hour" }
         return String(format: "%.1f hours", hours)
+    }
+    
+    private var syncStatusIcon: String {
+        switch cloudKitSync.syncStatusColor {
+        case .success: "checkmark.icloud"
+        case .warning: "exclamationmark.icloud"
+        case .error: "xmark.icloud"
+        case .syncing: "arrow.triangle.2.circlepath.icloud"
+        }
+    }
+    
+    private var syncStatusColor: Color {
+        switch cloudKitSync.syncStatusColor {
+        case .success: .green
+        case .warning: .orange
+        case .error: .red
+        case .syncing: .blue
+        }
     }
     
     private var versionFooter: some View {
