@@ -139,6 +139,7 @@ jobs:
 
           # Export for use in archive step
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
       - name: Archive app
         run: |
@@ -154,6 +155,16 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
+
+      - name: Embed commit hash in Info.plist
+        run: |
+          INFO_PLIST="${RUNNER_TEMP}/HardPhaseTracker.xcarchive/Products/Applications/HardPhase Tracker.app/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" || \
+          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
+          
+          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
+          echo "Info.plist GitCommitHash value:"
+          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
 
       - name: Export IPA
         run: |
@@ -271,6 +282,7 @@ jobs:
 
           # Export for use in archive step
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
       - name: Archive app
         run: |
@@ -286,6 +298,16 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
+
+      - name: Embed commit hash in Info.plist
+        run: |
+          INFO_PLIST="${RUNNER_TEMP}/HardPhaseTracker.xcarchive/Products/Applications/HardPhase Tracker.app/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" || \
+          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
+          
+          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
+          echo "Info.plist GitCommitHash value:"
+          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
 
       - name: Export IPA
         run: |
