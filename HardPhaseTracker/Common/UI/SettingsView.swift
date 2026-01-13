@@ -486,7 +486,7 @@ struct SettingsView: View {
         }
         .fileImporter(
             isPresented: $showingImportPicker,
-            allowedContentTypes: [.json],
+            allowedContentTypes: [.json, .plainText, .data],
             allowsMultipleSelection: false
         ) { result in
             handleImportSelection(result)
@@ -567,6 +567,19 @@ struct SettingsView: View {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
+            
+            // Start accessing security-scoped resource (required for iCloud Drive)
+            guard url.startAccessingSecurityScopedResource() else {
+                importError = NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                    NSLocalizedDescriptionKey: "Unable to access the file. Please try again."
+                ])
+                showingImportResult = true
+                return
+            }
+            
+            defer {
+                url.stopAccessingSecurityScopedResource()
+            }
             
             do {
                 let data = try Data(contentsOf: url)
