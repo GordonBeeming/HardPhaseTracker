@@ -141,6 +141,19 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
+      - name: Embed commit hash in source Info.plist
+        run: |
+          INFO_PLIST="HardPhaseTracker/Resources/Info.plist"
+          
+          echo "Embedding commit hash in source Info.plist before build..."
+          
+          # Add or update GitCommitHash in source file
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
+          
+          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
+          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
+
       - name: Archive app
         run: |
           xcodebuild archive \
@@ -155,33 +168,6 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
-
-      - name: Embed commit hash in Info.plist
-        run: |
-          # Find the correct Info.plist path in the archive
-          ARCHIVE_PATH="${RUNNER_TEMP}/HardPhaseTracker.xcarchive"
-          
-          echo "Looking for Info.plist in archive..."
-          find "$ARCHIVE_PATH" -name "Info.plist" -type f
-          
-          # The Info.plist should be in the app bundle
-          APP_PATH=$(find "$ARCHIVE_PATH/Products" -name "*.app" -type d | head -1)
-          INFO_PLIST="${APP_PATH}/Info.plist"
-          
-          echo "Using Info.plist at: $INFO_PLIST"
-          
-          if [ ! -f "$INFO_PLIST" ]; then
-            echo "Error: Info.plist not found at $INFO_PLIST"
-            exit 1
-          fi
-          
-          # Add or update GitCommitHash
-          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
-          
-          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
-          echo "Info.plist GitCommitHash value:"
-          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
 
       - name: Export IPA
         run: |
@@ -301,6 +287,19 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
+      - name: Embed commit hash in source Info.plist
+        run: |
+          INFO_PLIST="HardPhaseTracker/Resources/Info.plist"
+          
+          echo "Embedding commit hash in source Info.plist before build..."
+          
+          # Add or update GitCommitHash in source file
+          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
+          
+          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
+          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
+
       - name: Archive app
         run: |
           xcodebuild archive \
@@ -315,33 +314,6 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
-
-      - name: Embed commit hash in Info.plist
-        run: |
-          # Find the correct Info.plist path in the archive
-          ARCHIVE_PATH="${RUNNER_TEMP}/HardPhaseTracker.xcarchive"
-          
-          echo "Looking for Info.plist in archive..."
-          find "$ARCHIVE_PATH" -name "Info.plist" -type f
-          
-          # The Info.plist should be in the app bundle
-          APP_PATH=$(find "$ARCHIVE_PATH/Products" -name "*.app" -type d | head -1)
-          INFO_PLIST="${APP_PATH}/Info.plist"
-          
-          echo "Using Info.plist at: $INFO_PLIST"
-          
-          if [ ! -f "$INFO_PLIST" ]; then
-            echo "Error: Info.plist not found at $INFO_PLIST"
-            exit 1
-          fi
-          
-          # Add or update GitCommitHash
-          /usr/libexec/PlistBuddy -c "Add :GitCommitHash string ${{ env.COMMIT_HASH }}" "$INFO_PLIST" 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :GitCommitHash ${{ env.COMMIT_HASH }}" "$INFO_PLIST"
-          
-          echo "Embedded commit hash: ${{ env.COMMIT_HASH }}"
-          echo "Info.plist GitCommitHash value:"
-          /usr/libexec/PlistBuddy -c "Print :GitCommitHash" "$INFO_PLIST"
 
       - name: Export IPA
         run: |
