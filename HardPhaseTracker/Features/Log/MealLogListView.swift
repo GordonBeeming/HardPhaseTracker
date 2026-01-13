@@ -74,7 +74,7 @@ struct MealLogListView: View {
                             let electrolyteRows = (shouldShowElectrolytes && isSelectedDayGroup) ? electrolyteEntries : []
 
                             let rows: [LogRow] = (electrolyteRows.map { LogRow.electrolyte($0) } + group.entries.map { LogRow.meal($0) })
-                                .sorted { $0.timestamp > $1.timestamp }
+                                .sorted { $0.timestamp < $1.timestamp }
 
                             ForEach(rows) { row in
                                 switch row {
@@ -179,7 +179,7 @@ struct MealLogListView: View {
         }
 
         return dict
-            .map { DayGroup(day: $0.key, entries: $0.value.sorted { $0.timestamp > $1.timestamp }) }
+            .map { DayGroup(day: $0.key, entries: $0.value.sorted { $0.timestamp < $1.timestamp }) }
             .sorted { $0.day > $1.day }
     }
 
