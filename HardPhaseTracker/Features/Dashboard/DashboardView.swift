@@ -145,12 +145,17 @@ struct DashboardView: View {
 
                 }
             }
+            .refreshable {
+                let maxDays = appSettings?.healthDataMaxPullDays ?? 90
+                let startDate = appSettings?.healthMonitoringStartDate
+                await health.incrementalRefresh(maxDays: maxDays, startDate: startDate, minDisplayTime: 1.0)
+            }
         }
         .appScreen()
         .task {
             let maxDays = appSettings?.healthDataMaxPullDays ?? 90
             let startDate = appSettings?.healthMonitoringStartDate
-            await health.refreshIfCacheStale(maxDays: maxDays, startDate: startDate)
+            await health.refreshIfTodayWeightMissing(maxDays: maxDays, startDate: startDate)
         }
         .sheet(isPresented: $isLoggingMeal) {
             MealQuickLogView {

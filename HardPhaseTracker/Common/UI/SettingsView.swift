@@ -34,6 +34,7 @@ struct SettingsView: View {
 
     @State private var selectedTab: SectionTab? = .dashboard
     @StateObject private var health = HealthKitViewModel()
+    @State private var isRefreshingHealth = false
 
     // Dashboard
     @State private var alwaysShowLogMeal = false
@@ -348,10 +349,23 @@ struct SettingsView: View {
 
                         Button("Refresh from Apple Health") {
                             Task { 
+                                isRefreshingHealth = true
                                 await health.refresh(
                                     maxDays: healthDataMaxPullDays,
-                                    startDate: healthMonitoringStartDate
+                                    startDate: healthMonitoringStartDate,
+                                    minDisplayTime: 1.0
                                 )
+                                isRefreshingHealth = false
+                            }
+                        }
+                        .disabled(isRefreshingHealth)
+                        
+                        if isRefreshingHealth {
+                            HStack {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                Text("Refreshing...")
+                                    .foregroundStyle(.secondary)
                             }
                         }
 

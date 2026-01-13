@@ -61,7 +61,8 @@ final class HealthKitViewModel: ObservableObject {
         }
     }
 
-    func refresh(maxDays: Int = 90, startDate: Date? = nil) async {
+    func refresh(maxDays: Int = 90, startDate: Date? = nil, minDisplayTime: TimeInterval = 0) async {
+        let startTime = Date()
         errorMessage = nil
         await refreshPermission()
 
@@ -82,9 +83,91 @@ final class HealthKitViewModel: ObservableObject {
             firstWeight = try await first
             sleepLast7Nights = try await s7
             saveCache()
+            
+            // Ensure minimum display time
+            if minDisplayTime > 0 {
+                let elapsed = Date().timeIntervalSince(startTime)
+                if elapsed < minDisplayTime {
+                    try? await Task.sleep(nanoseconds: UInt64((minDisplayTime - elapsed) * 1_000_000_000))
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func incrementalRefresh(maxDays: Int = 90, startDate: Date? = nil, minDisplayTime: TimeInterval = 0) async {
+        let startTime = Date()
+        errorMessage = nil
+        await refreshPermission()
+
+        guard permission == .authorized else { return }
+
+        // Use the last cache update date as the incremental start date
+        let incrementalStartDate = cacheUpdatedAt ?? startDate ?? Date().addingTimeInterval(-Double(maxDays) * 86400)
+
+        do {
+            // Fetch only new data since last refresh
+            async let w = service.fetchLatestWeight()
+            async let bf = service.fetchLatestBodyFat()
+            async let newWeights = service.fetchWeightSamples(lastDays: maxDays, startDate: incrementalStartDate)
+            async let first = service.fetchFirstWeight(afterDate: startDate)
+            async let s7 = service.fetchSleepNights(lastN: 7)
+
+            latestWeight = try await w
+            latestBodyFat = try await bf
+            
+            // Merge new weights with existing cached weights
+            let fetchedWeights = try await newWeights
+            let mergedWeights = mergeWeights(existing: weightsLast14Days, new: fetchedWeights)
+            
+            // Filter for last 7 and 14 days
+            let cutoff7Days = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            let cutoff14Days = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+            
+            weightsLast7Days = mergedWeights.filter { $0.date >= cutoff7Days }
+            weightsLast14Days = mergedWeights.filter { $0.date >= cutoff14Days }
+            firstWeight = try await first
+            sleepLast7Nights = try await s7
+            saveCache()
+            
+            // Ensure minimum display time
+            if minDisplayTime > 0 {
+                let elapsed = Date().timeIntervalSince(startTime)
+                if elapsed < minDisplayTime {
+                    try? await Task.sleep(nanoseconds: UInt64((minDisplayTime - elapsed) * 1_000_000_000))
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func mergeWeights(existing: [WeightSample], new: [WeightSample]) -> [WeightSample] {
+        // Create a dictionary of existing weights by date (truncated to day)
+        var weightsByDay: [Date: WeightSample] = [:]
+        
+        let calendar = Calendar.current
+        for weight in existing {
+            let day = calendar.startOfDay(for: weight.date)
+            weightsByDay[day] = weight
+        }
+        
+        // Add/update with new weights
+        for weight in new {
+            let day = calendar.startOfDay(for: weight.date)
+            // Keep the newer weight if there are multiple on the same day
+            if let existingWeight = weightsByDay[day] {
+                if weight.date > existingWeight.date {
+                    weightsByDay[day] = weight
+                }
+            } else {
+                weightsByDay[day] = weight
+            }
+        }
+        
+        // Return sorted array
+        return weightsByDay.values.sorted { $0.date < $1.date }
     }
 
     func refreshIfCacheStale(maxAgeHours: Double = 12, maxDays: Int = 90, startDate: Date? = nil) async {
@@ -96,6 +179,28 @@ final class HealthKitViewModel: ObservableObject {
         let age = Date().timeIntervalSince(last)
         if weightsLast7Days.isEmpty || weightsLast14Days.isEmpty || sleepLast7Nights.isEmpty || age > maxAgeHours * 3600 {
             await refresh(maxDays: maxDays, startDate: startDate)
+        }
+    }
+    
+    func refreshIfTodayWeightMissing(maxDays: Int = 90, startDate: Date? = nil) async {
+        await refreshPermission()
+        guard permission == .authorized else { return }
+        guard !isDisconnected else { return }
+        
+        // Check if we have a weight sample from today
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        let hasTodayWeight = latestWeight.map { weight in
+            calendar.isDate(weight.date, inSameDayAs: Date())
+        } ?? false
+        
+        // If no weight for today, do an incremental refresh
+        if !hasTodayWeight {
+            await incrementalRefresh(maxDays: maxDays, startDate: startDate)
+        } else {
+            // Otherwise just do a stale check
+            await refreshIfCacheStale(maxDays: maxDays, startDate: startDate)
         }
     }
 
