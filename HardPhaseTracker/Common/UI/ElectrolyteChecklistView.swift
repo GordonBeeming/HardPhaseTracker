@@ -28,7 +28,12 @@ struct ElectrolyteChecklistView: View {
 
     var body: some View {
         let target = ElectrolyteTargetService.servingsPerDay(for: date, targets: targets)
+        // Show enough slots to accommodate both the target and any extra entries that were logged
+        // This prevents "hiding" entries if someone logged more than the current target
         let effectiveTarget = max(target, entries.count)
+        
+        // Check if entries exceed target
+        let isOverTarget = entries.count > target && target > 0
 
         if effectiveTarget <= 0 {
             EmptyView()
@@ -40,9 +45,15 @@ struct ElectrolyteChecklistView: View {
 
                     Spacer()
 
-                    Text("\(entries.count)/\(effectiveTarget)")
-                        .foregroundStyle(.secondary)
+                    Text("\(entries.count)/\(target)")
+                        .foregroundStyle(isOverTarget ? .orange : .secondary)
                         .font(.subheadline)
+                }
+                
+                if isOverTarget {
+                    Text("You've exceeded your daily target of \(target)")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
                 }
 
                 if availableTemplates.isEmpty {

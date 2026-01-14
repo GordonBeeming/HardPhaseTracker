@@ -4,8 +4,17 @@ import SwiftData
 enum ElectrolyteTargetService {
     static func servingsPerDay(for date: Date, targets: [ElectrolyteTargetSetting]) -> Int {
         let day = Calendar.current.startOfDay(for: date)
+        
+        // Try to find target effective on or before the requested date
+        if let historicalTarget = targets
+            .filter({ $0.effectiveDate <= day })
+            .max(by: { $0.effectiveDate < $1.effectiveDate }) {
+            return historicalTarget.servingsPerDay
+        }
+        
+        // If no historical target found (date is before any configured target),
+        // fall back to the most recent target (current configuration)
         return targets
-            .filter { $0.effectiveDate <= day }
             .max(by: { $0.effectiveDate < $1.effectiveDate })?
             .servingsPerDay ?? 0
     }

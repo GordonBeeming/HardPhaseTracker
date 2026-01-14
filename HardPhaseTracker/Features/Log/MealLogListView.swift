@@ -5,8 +5,6 @@ struct MealLogListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
 
-    @Query private var electrolyteEntries: [ElectrolyteIntakeEntry]
-
     let entries: [MealLogEntry]
     let selectedDate: Date
     let settings: AppSettings?
@@ -17,9 +15,6 @@ struct MealLogListView: View {
         self.selectedDate = selectedDate
         self.settings = settings
         self.header = header
-
-        let day = Calendar.current.startOfDay(for: selectedDate)
-        _electrolyteEntries = Query(filter: #Predicate<ElectrolyteIntakeEntry> { $0.dayStart == day })
     }
 
     @State private var editingEntry: MealLogEntry?
@@ -28,19 +23,8 @@ struct MealLogListView: View {
     var body: some View {
         let grouped = group(entries: entries)
 
-        let shouldShowElectrolytes = !electrolyteEntries.isEmpty
-
-        let displayedGroups: [DayGroup] = {
-            if grouped.isEmpty && shouldShowElectrolytes {
-                return [DayGroup(day: Calendar.current.startOfDay(for: selectedDate), entries: [])]
-            }
-            return grouped
-        }()
-
-        let isEmptyState = entries.isEmpty && !shouldShowElectrolytes
-
         Group {
-            if isEmptyState {
+            if entries.isEmpty {
                 VStack(spacing: 0) {
                     if let header {
                         header()
@@ -56,72 +40,62 @@ struct MealLogListView: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, 16)
+                    
+                    Spacer()
+                    
+                    // Show electrolyte checklist even when no meals
+                    ElectrolyteChecklistView(date: selectedDate, settings: settings)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                 }
             } else {
                 List {
                     if let header {
                         Section {
                             header()
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                                .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
-                                .listRowBackground(AppTheme.background(colorScheme))
+                                .listRowBackground(Color.clear)
                         }
                     }
 
-                    ForEach(displayedGroups, id: \.day) { group in
+                    ForEach(grouped, id: \.day) { group in
                         Section(dayTitle(group.day)) {
-                            let isSelectedDayGroup = Calendar.current.isDate(group.day, inSameDayAs: selectedDate)
-                            let electrolyteRows = (shouldShowElectrolytes && isSelectedDayGroup) ? electrolyteEntries : []
-
-                            let rows: [LogRow] = (electrolyteRows.map { LogRow.electrolyte($0) } + group.entries.map { LogRow.meal($0) })
-                                .sorted { $0.timestamp < $1.timestamp }
-
-                            ForEach(rows) { row in
-                                switch row {
-                                case .electrolyte(let e):
+                            ForEach(group.entries) { entry in
+                                Button {
+                                    detailEntry = entry
+                                } label: {
                                     HStack {
-                                        Image(systemName: "drop.fill")
+                                        Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
                                             .foregroundStyle(.secondary)
 
-                                        Text(e.template?.name ?? "Electrolyte")
+                                        Text(entry.template?.name ?? "Meal")
 
                                         Spacer()
+
+                                        Text(timeText(for: entry))
+                                            .foregroundStyle(.secondary)
                                     }
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button("Delete", role: .destructive) {
-                                            modelContext.delete(e)
-                                            modelContext.saveLogged()
-                                        }
-                                    }
-
-                                case .meal(let entry):
-                                    Button {
-                                        detailEntry = entry
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: (entry.template?.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
-                                                .foregroundStyle(.secondary)
-
-                                            Text(entry.template?.name ?? "Meal")
-
-                                            Spacer()
-
-                                            Text(timeText(for: entry))
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button("Edit") { editingEntry = entry }
-                                        Button("Delete", role: .destructive) {
-                                            modelContext.delete(entry)
-                                            modelContext.saveLogged()
-                                        }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button("Edit") { editingEntry = entry }
+                                    Button("Delete", role: .destructive) {
+                                        modelContext.delete(entry)
+                                        modelContext.saveLogged()
                                     }
                                 }
                             }
                         }
+                    }
+                    
+                    // Show electrolyte checklist at the bottom
+                    Section {
+                        ElectrolyteChecklistView(date: selectedDate, settings: settings)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -142,29 +116,6 @@ struct MealLogListView: View {
     private var emptyTitle: String {
         let cal = Calendar.current
         return cal.isDateInToday(selectedDate) ? "No meals today" : "No meals on this day"
-    }
-
-    private enum LogRow: Identifiable {
-        case meal(MealLogEntry)
-        case electrolyte(ElectrolyteIntakeEntry)
-
-        var id: String {
-            switch self {
-            case .meal(let e):
-                return "meal-\(e.persistentModelID)"
-            case .electrolyte(let e):
-                return "electrolyte-\(e.persistentModelID)"
-            }
-        }
-
-        var timestamp: Date {
-            switch self {
-            case .meal(let e):
-                return e.timestamp
-            case .electrolyte(let e):
-                return e.timestamp
-            }
-        }
     }
 
     private struct DayGroup {

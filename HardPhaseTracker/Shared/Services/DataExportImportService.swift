@@ -158,8 +158,10 @@ final class DataExportImportService {
         }
         
         // Export electrolyte target settings
+        logger.info("Exporting \(electrolyteTargetSettings.count) electrolyte target settings...")
         let exportedElectrolyteTargets = electrolyteTargetSettings.map { setting -> ExportElectrolyteTargetSetting in
-            ExportElectrolyteTargetSetting(
+            logger.debug("  → Target: effectiveDate=\(setting.effectiveDate), servings=\(setting.servingsPerDay)")
+            return ExportElectrolyteTargetSetting(
                 id: UUID().uuidString,
                 effectiveDate: setting.effectiveDate,
                 servingsPerDay: setting.servingsPerDay
@@ -370,13 +372,19 @@ final class DataExportImportService {
                 slotIndex: exportEntry.slotIndex,
                 template: template
             )
+            // Preserve the original dayStart from the backup
+            entry.dayStart = exportEntry.dayStart
             modelContext.insert(entry)
         }
         
         // Import electrolyte target settings (no dependencies)
+        logger.info("Importing \(exportData.electrolyteTargetSettings.count) electrolyte target settings...")
         for exportTarget in exportData.electrolyteTargetSettings {
+            logger.debug("  → Target: effectiveDate=\(exportTarget.effectiveDate), servings=\(exportTarget.servingsPerDay)")
+            // Normalize effectiveDate to start of day in local timezone
+            let normalizedDate = Calendar.current.startOfDay(for: exportTarget.effectiveDate)
             let target = ElectrolyteTargetSetting(
-                effectiveDate: exportTarget.effectiveDate,
+                effectiveDate: normalizedDate,
                 servingsPerDay: exportTarget.servingsPerDay
             )
             modelContext.insert(target)
