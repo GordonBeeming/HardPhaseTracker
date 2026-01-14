@@ -225,7 +225,7 @@ jobs:
           ls -lh $RUNNER_TEMP/export/HardPhaseTracker.ipa
 
       - name: Upload to TestFlight
-        uses: apple-actions/upload-testflight-build@1fb41afa66075b5d62c79cb623c6c4999334e185 # v4.0.0
+        uses: apple-actions/upload-testflight-build@9fd28d4e690396e43caca69cef54cccccce77034 # v3.0.1
         with:
           app-path: ${{ runner.temp }}/export/HardPhaseTracker.ipa
           issuer-id: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
@@ -387,7 +387,7 @@ jobs:
           ls -lh $RUNNER_TEMP/export/HardPhaseTracker.ipa
 
       - name: Upload to App Store Connect
-        uses: apple-actions/upload-testflight-build@1fb41afa66075b5d62c79cb623c6c4999334e185 # v4.0.0
+        uses: apple-actions/upload-testflight-build@9fd28d4e690396e43caca69cef54cccccce77034 # v3.0.1
         with:
           app-path: ${{ runner.temp }}/export/HardPhaseTracker.ipa
           issuer-id: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
