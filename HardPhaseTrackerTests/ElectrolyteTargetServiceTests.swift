@@ -19,8 +19,9 @@ struct ElectrolyteTargetServiceTests {
         #expect(ElectrolyteTargetService.servingsPerDay(for: day2, targets: targets) == 2)
         #expect(ElectrolyteTargetService.servingsPerDay(for: day3, targets: targets) == 4)
 
+        // For dates before any configured target, fall back to most recent target
         let beforeAll = cal.date(byAdding: .day, value: -1, to: day1)!
-        #expect(ElectrolyteTargetService.servingsPerDay(for: beforeAll, targets: targets) == 0)
+        #expect(ElectrolyteTargetService.servingsPerDay(for: beforeAll, targets: targets) == 4)
     }
 
     @Test func upsertTodayDoesNotChangePastTargets() async throws {
@@ -51,5 +52,12 @@ struct ElectrolyteTargetServiceTests {
 
         #expect(ElectrolyteTargetService.servingsPerDay(for: yesterday, targets: fetched) == 2)
         #expect(ElectrolyteTargetService.servingsPerDay(for: today, targets: fetched) == 4)
+    }
+    
+    @Test func servingsPerDayReturnsZeroForEmptyTargets() {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        
+        #expect(ElectrolyteTargetService.servingsPerDay(for: today, targets: []) == 0)
     }
 }
