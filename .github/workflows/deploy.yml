@@ -168,6 +168,13 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
+          
+          echo "Verifying archive was created..."
+          if [ ! -d "$RUNNER_TEMP/HardPhaseTracker.xcarchive" ]; then
+            echo "ERROR: Archive not found at $RUNNER_TEMP/HardPhaseTracker.xcarchive"
+            exit 1
+          fi
+          ls -la $RUNNER_TEMP/HardPhaseTracker.xcarchive
 
       - name: Export IPA
         run: |
@@ -207,6 +214,15 @@ jobs:
             -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
             -exportPath $RUNNER_TEMP/export \
             -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
+          
+          echo "Verifying IPA was exported..."
+          if [ ! -f "$RUNNER_TEMP/export/HardPhaseTracker.ipa" ]; then
+            echo "ERROR: IPA not found at $RUNNER_TEMP/export/HardPhaseTracker.ipa"
+            echo "Contents of export directory:"
+            ls -la $RUNNER_TEMP/export/ || echo "Export directory does not exist"
+            exit 1
+          fi
+          ls -lh $RUNNER_TEMP/export/HardPhaseTracker.ipa
 
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
@@ -314,6 +330,13 @@ jobs:
             CODE_SIGN_IDENTITY="${{ vars.CODE_SIGN_IDENTITY }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ vars.PROVISIONING_PROFILE_NAME }}" \
             CODE_SIGN_ENTITLEMENTS="HardPhaseTracker/Resources/HardPhaseTracker-Production.entitlements"
+          
+          echo "Verifying archive was created..."
+          if [ ! -d "$RUNNER_TEMP/HardPhaseTracker.xcarchive" ]; then
+            echo "ERROR: Archive not found at $RUNNER_TEMP/HardPhaseTracker.xcarchive"
+            exit 1
+          fi
+          ls -la $RUNNER_TEMP/HardPhaseTracker.xcarchive
 
       - name: Export IPA
         run: |
@@ -353,6 +376,15 @@ jobs:
             -archivePath $RUNNER_TEMP/HardPhaseTracker.xcarchive \
             -exportPath $RUNNER_TEMP/export \
             -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist
+          
+          echo "Verifying IPA was exported..."
+          if [ ! -f "$RUNNER_TEMP/export/HardPhaseTracker.ipa" ]; then
+            echo "ERROR: IPA not found at $RUNNER_TEMP/export/HardPhaseTracker.ipa"
+            echo "Contents of export directory:"
+            ls -la $RUNNER_TEMP/export/ || echo "Export directory does not exist"
+            exit 1
+          fi
+          ls -lh $RUNNER_TEMP/export/HardPhaseTracker.ipa
 
       - name: Upload to App Store Connect
         uses: apple-actions/upload-testflight-build@v1
