@@ -78,6 +78,12 @@ struct DashboardView: View {
                                             .font(.footnote)
                                         }
                                     }
+                                    .padding(16)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(AppTheme.cardBackground(colorScheme))
+                                    )
+                                    .padding(.horizontal)
                                 } else {
                                     VStack(alignment: .leading, spacing: 12) {
                                         Label("Outside eating window", systemImage: "exclamationmark.triangle.fill")
