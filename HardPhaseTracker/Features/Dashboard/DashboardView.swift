@@ -66,11 +66,6 @@ struct DashboardView: View {
                                     VStack(spacing: 10) {
                                         EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
 
-                                        Button("Change eating window") {
-                                            isPickingSchedule = true
-                                        }
-                                        .font(.footnote)
-
                                         if !shouldShowPrimaryLogMeal {
                                             Button("Log meal") {
                                                 isLoggingMeal = true
@@ -90,12 +85,6 @@ struct DashboardView: View {
                                             .foregroundStyle(.orange)
 
                                         EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
-
-                                        Button("Change eating window") {
-                                            isPickingSchedule = true
-                                        }
-                                        .buttonStyle(.borderedProminent)
-                                        .tint(.orange)
 
                                         if !shouldShowPrimaryLogMeal {
                                             Button("Log meal anyway") {
@@ -286,8 +275,9 @@ private struct DashboardWeightTrendCardView: View {
             return (min: 0, max: 100)
         }
 
-        // Calculate lower bound: highest of (goal - 5) OR (2 weeks ago weight - 20)
-        var lowerBound = dataMin - 20
+        // Calculate lower bound: highest of (goal - 5) OR (current weight - 5)
+        // Use dataMax (most recent/current weight) instead of dataMin to handle weight loss
+        var lowerBound = dataMax - 5
 
         if let goalKg = weightGoalKg {
             let goalDisplay = displayValue(kilograms: goalKg)

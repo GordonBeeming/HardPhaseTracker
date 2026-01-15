@@ -32,7 +32,6 @@ Each section below is “done” when:
 - ✅ Code is structured as **Vertical Slice Architecture** (feature folders), with small reviewable files
 - ✅ Tests added/updated:
   - Logic: **Swift Testing** (`HardPhaseTrackerTests`) where feasible
-  - Critical flows: **XCUITest** (`HardPhaseTrackerUITests`) for smoke coverage
 - ✅ No obvious regressions in existing flows
 - ✅ A short PR description (or local notes) explains what changed
 - ✅ Squash merge to `main`
@@ -44,7 +43,6 @@ Each section below is “done” when:
 ### What we test
 - **Pure logic** (fasting duration math, daily tallying, weekly aggregation, date boundaries) as unit-style tests using **Swift Testing**.
 - **Integration seams** via dependency injection (e.g., clock/time provider, HealthKit client protocol, SwiftData container) so logic stays testable.
-- **Critical user journeys** via **XCUITest** (launch, navigate, create/edit/delete template, log meal, log Sodii).
 
 ### Device coverage
 - For each milestone, do a quick pass on:

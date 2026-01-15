@@ -74,6 +74,7 @@ struct SettingsView: View {
     @State private var importError: Error?
     @State private var isExporting = false
     @State private var isImporting = false
+    @State private var isPickingSchedule = false
 
     var body: some View {
         Group {
@@ -185,6 +186,12 @@ struct SettingsView: View {
         Form {
             switch tab {
             case .dashboard:
+                Section("Eating window") {
+                    Button("Change eating window") {
+                        isPickingSchedule = true
+                    }
+                }
+                
                 Section("Log Meal button") {
                     Toggle("Always show Log Meal", isOn: $alwaysShowLogMeal)
 
@@ -516,6 +523,9 @@ struct SettingsView: View {
             } else if let result = importResult {
                 Text(result.summary)
             }
+        }
+        .sheet(isPresented: $isPickingSchedule) {
+            SchedulePickerView()
         }
     }
 

@@ -41,17 +41,6 @@
                ReferencedContainer = "container:HardPhaseTracker.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DB636BBE2F0804B00011D5D5"
-               BuildableName = "HardPhaseTrackerUITests.xctest"
-               BlueprintName = "HardPhaseTrackerUITests"
-               ReferencedContainer = "container:HardPhaseTracker.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

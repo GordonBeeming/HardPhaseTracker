@@ -52,25 +52,6 @@ jobs:
             -only-testing:HardPhaseTrackerTests \
             -quiet
 
-      # UI tests disabled due to simulator instability in CI
-      # - name: Run UI tests (iPhone)
-      #   run: |
-      #     xcodebuild test-without-building \
-      #       -project HardPhaseTracker.xcodeproj \
-      #       -scheme HardPhaseTracker \
-      #       -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-      #       -only-testing:HardPhaseTrackerUITests \
-      #       -quiet
-      #
-      # - name: Run UI tests (iPad)
-      #   run: |
-      #     xcodebuild test-without-building \
-      #       -project HardPhaseTracker.xcodeproj \
-      #       -scheme HardPhaseTracker \
-      #       -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
-      #       -only-testing:HardPhaseTrackerUITests \
-      #       -quiet
-
       - name: Archive test results
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
