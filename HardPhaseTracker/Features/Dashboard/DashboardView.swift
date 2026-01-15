@@ -66,11 +66,6 @@ struct DashboardView: View {
                                     VStack(spacing: 10) {
                                         EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
 
-                                        Button("Change eating window") {
-                                            isPickingSchedule = true
-                                        }
-                                        .font(.footnote)
-
                                         if !shouldShowPrimaryLogMeal {
                                             Button("Log meal") {
                                                 isLoggingMeal = true
@@ -90,12 +85,6 @@ struct DashboardView: View {
                                             .foregroundStyle(.orange)
 
                                         EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
-
-                                        Button("Change eating window") {
-                                            isPickingSchedule = true
-                                        }
-                                        .buttonStyle(.borderedProminent)
-                                        .tint(.orange)
 
                                         if !shouldShowPrimaryLogMeal {
                                             Button("Log meal anyway") {
@@ -286,17 +275,21 @@ private struct DashboardWeightTrendCardView: View {
             return (min: 0, max: 100)
         }
 
-        // Calculate lower bound: highest of (goal - 5) OR (2 weeks ago weight - 20)
-        var lowerBound = dataMin - 20
+        // Calculate lower bound: use the lower of (goal - 5) OR (current weight - 5)
+        // This ensures we show enough range to see progress toward goal
+        var lowerBound = dataMax - 5
 
         if let goalKg = weightGoalKg {
             let goalDisplay = displayValue(kilograms: goalKg)
             let goalBasedLower = goalDisplay - 5
-            lowerBound = max(lowerBound, goalBasedLower)
+            lowerBound = min(lowerBound, goalBasedLower)
         }
 
-        // Ensure bounds are reasonable and add some padding
-        let padding = (dataMax - dataMin) * 0.1
+        // Use the actual data minimum if it's lower than our calculated bound
+        lowerBound = min(lowerBound, dataMin)
+
+        // Add small padding for visual spacing
+        let padding = 2.0
         let finalMin = max(0, lowerBound - padding)
         let finalMax = dataMax + padding
 

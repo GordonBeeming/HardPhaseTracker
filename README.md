@@ -45,7 +45,6 @@ A minimalist fasting tracker for iPhone + iPad.
 - Swift / SwiftUI
 - SwiftData
 - Unit tests: Swift Testing (`HardPhaseTrackerTests`)
-- UI tests: XCUITest (`HardPhaseTrackerUITests`)
 
 ## Requirements
 
@@ -65,7 +64,6 @@ For now this is a personal project; contribution guidelines will be added once t
 ## Testing
 
 - Run unit tests: Product → Test (or `⌘U`).
-- UI tests are included for smoke coverage of core flows.
 
 ## Architecture
 
