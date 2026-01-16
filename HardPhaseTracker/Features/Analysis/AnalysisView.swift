@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct AnalysisView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -27,6 +28,14 @@ struct AnalysisView: View {
 
     private var sleepCorrelationRows: [SleepFastingCorrelationRow] {
         SleepFastingCorrelationService.rows(sleepNights: health.sleepLast7Nights, mealEntries: mealEntries)
+    }
+    
+    private var weeklyWeightChanges: [(weekStart: Date, change: Double)] {
+        WeightAnalysisService.weeklyChanges(weights: health.allWeights)
+    }
+    
+    private var averageWeightChangeByDayOfWeek: [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
+        WeightAnalysisService.averageChangeByDayOfWeek(weights: health.allWeights)
     }
 
     var body: some View {
@@ -89,6 +98,18 @@ struct AnalysisView: View {
                     if let msg = health.errorMessage {
                         Text(msg)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                if health.permission == .authorized && !health.allWeights.isEmpty {
+                    Section("Weight Analysis") {
+                        NavigationLink("Weight Change by Week") {
+                            WeightByWeekView(weeklyChanges: weeklyWeightChanges)
+                        }
+                        
+                        NavigationLink("Weight Change by Day of Week") {
+                            WeightByDayOfWeekView(dayData: averageWeightChangeByDayOfWeek)
+                        }
                     }
                 }
 
