@@ -287,16 +287,19 @@ private struct DashboardWeightTrendCardView: View {
             return (min: 0, max: 100)
         }
 
-        // Calculate lower bound: round down (current weight - 7) to nearest 5
-        // This ensures the bottom gridline is visible and at a clean 5kg increment
-        let lowerBound = floor((dataMax - 7) / 5) * 5
+        // Calculate lower bound: (current - 2) rounded down to nearest 5
+        // e.g., 167.4 → 165.4 → 165; 166.5 → 164.5 → 160
+        let lowerBound = floor((dataMax - 2) / 5) * 5
         
         // Use the actual data minimum if it's lower than our calculated bound
         let finalLowerBound = min(lowerBound, dataMin)
 
-        // Add padding - use the rounded lower bound directly for min
+        // Calculate upper bound: round up to nearest 5
+        // e.g., 167.4 → 170; 165.0 → 165
+        let upperBound = ceil(dataMax / 5) * 5
+
         let finalMin = max(0, finalLowerBound)
-        let finalMax = dataMax + 2
+        let finalMax = upperBound
 
         return (min: finalMin, max: finalMax)
     }

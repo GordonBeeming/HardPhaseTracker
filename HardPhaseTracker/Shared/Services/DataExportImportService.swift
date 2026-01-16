@@ -22,6 +22,11 @@ final class DataExportImportService {
         let electrolyteTargetSettings: [ExportElectrolyteTargetSetting]
         let eatingWindowSchedules: [ExportEatingWindowSchedule]
         let appSettings: ExportAppSettings?
+        
+        // Optional health data for testing purposes (not synced to HealthKit on import)
+        let weightSamples: [WeightSample]?
+        let bodyFatSamples: [BodyFatSample]?
+        let sleepNights: [SleepNight]?
     }
     
     struct ExportMealTemplate: Codable, Identifiable {
@@ -93,7 +98,11 @@ final class DataExportImportService {
     
     // MARK: - Export
     
-    static func exportAllData(modelContext: ModelContext) throws -> Data {
+    static func exportAllData(
+        modelContext: ModelContext,
+        includeHealthData: Bool = false,
+        healthKitViewModel: HealthKitViewModel? = nil
+    ) throws -> Data {
         logger.info("Starting data export...")
         
         // Fetch all data
@@ -207,6 +216,15 @@ final class DataExportImportService {
             )
         }
         
+        // Gather health data if requested
+        let weightSamples: [WeightSample]? = includeHealthData ? healthKitViewModel?.allWeights : nil
+        let bodyFatSamples: [BodyFatSample]? = includeHealthData ? healthKitViewModel?.allBodyFat : nil
+        let sleepNights: [SleepNight]? = includeHealthData ? healthKitViewModel?.allSleepNights : nil
+        
+        if includeHealthData {
+            logger.info("Including health data: \(weightSamples?.count ?? 0) weights, \(bodyFatSamples?.count ?? 0) body fat samples, \(sleepNights?.count ?? 0) sleep nights")
+        }
+        
         // Create export data
         let exportData = ExportData(
             version: 1,
@@ -218,7 +236,10 @@ final class DataExportImportService {
             electrolyteIntakeEntries: exportedElectrolyteIntakes,
             electrolyteTargetSettings: exportedElectrolyteTargets,
             eatingWindowSchedules: exportedSchedules,
-            appSettings: exportedSettings
+            appSettings: exportedSettings,
+            weightSamples: weightSamples,
+            bodyFatSamples: bodyFatSamples,
+            sleepNights: sleepNights
         )
         
         // Encode to JSON
@@ -260,9 +281,13 @@ final class DataExportImportService {
         let electrolyteTargetsImported: Int
         let schedulesImported: Int
         let settingsImported: Bool
+        let healthDataImported: Bool
+        let weightsImported: Int
+        let bodyFatImported: Int
+        let sleepNightsImported: Int
         
         var summary: String {
-            """
+            var result = """
             Import completed:
             • \(templatesImported) meal templates
             • \(componentsImported) meal components
@@ -272,10 +297,21 @@ final class DataExportImportService {
             • \(schedulesImported) eating window schedules
             • Settings: \(settingsImported ? "imported" : "not imported")
             """
+            
+            if healthDataImported {
+                result += "\n• Health data: \(weightsImported) weights, \(bodyFatImported) body fat, \(sleepNightsImported) sleep nights"
+            }
+            
+            return result
         }
     }
     
-    static func importAllData(from jsonData: Data, into modelContext: ModelContext, mergeStrategy: ImportMergeStrategy = .replace) throws -> ImportResult {
+    static func importAllData(
+        from jsonData: Data,
+        into modelContext: ModelContext,
+        healthKitViewModel: HealthKitViewModel? = nil,
+        mergeStrategy: ImportMergeStrategy = .replace
+    ) throws -> ImportResult {
         logger.info("Starting data import...")
         
         // Decode JSON
@@ -418,6 +454,42 @@ final class DataExportImportService {
             settingsImported = true
         }
         
+        // Import health data if available and HealthKitViewModel is provided
+        var healthDataImported = false
+        var weightsImported = 0
+        var bodyFatImported = 0
+        var sleepNightsImported = 0
+        
+        if let healthKitVM = healthKitViewModel {
+            if let weights = exportData.weightSamples {
+                healthKitVM.restoreHealthData(weights: weights, bodyFat: nil, sleepNights: nil)
+                weightsImported = weights.count
+                healthDataImported = true
+                logger.info("Restored \(weights.count) weight samples to HealthKit cache")
+            }
+            
+            if let bodyFat = exportData.bodyFatSamples {
+                healthKitVM.restoreHealthData(weights: nil, bodyFat: bodyFat, sleepNights: nil)
+                bodyFatImported = bodyFat.count
+                healthDataImported = true
+                logger.info("Restored \(bodyFat.count) body fat samples to HealthKit cache")
+            }
+            
+            if let sleepNights = exportData.sleepNights {
+                healthKitVM.restoreHealthData(weights: nil, bodyFat: nil, sleepNights: sleepNights)
+                sleepNightsImported = sleepNights.count
+                healthDataImported = true
+                logger.info("Restored \(sleepNights.count) sleep nights to HealthKit cache")
+            }
+            
+            // If we have all three types, restore them together
+            if let weights = exportData.weightSamples,
+               let bodyFat = exportData.bodyFatSamples,
+               let sleepNights = exportData.sleepNights {
+                healthKitVM.restoreHealthData(weights: weights, bodyFat: bodyFat, sleepNights: sleepNights)
+            }
+        }
+        
         // Save all changes
         try modelContext.save()
         
@@ -428,7 +500,11 @@ final class DataExportImportService {
             electrolyteIntakesImported: exportData.electrolyteIntakeEntries.count,
             electrolyteTargetsImported: exportData.electrolyteTargetSettings.count,
             schedulesImported: exportData.eatingWindowSchedules.count,
-            settingsImported: settingsImported
+            settingsImported: settingsImported,
+            healthDataImported: healthDataImported,
+            weightsImported: weightsImported,
+            bodyFatImported: bodyFatImported,
+            sleepNightsImported: sleepNightsImported
         )
         
         logger.info("Data import completed: \(result.summary)")

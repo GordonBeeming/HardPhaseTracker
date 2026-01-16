@@ -1,6 +1,30 @@
 import Foundation
 
 struct WeightAnalysisService {
+    /// Calculate weekly weight trend (absolute weight values by week)
+    static func weeklyWeightTrend(weights: [WeightSample]) -> [(weekStart: Date, weight: Double)] {
+        guard !weights.isEmpty else { return [] }
+        
+        let sortedWeights = weights.sorted { $0.date < $1.date }
+        let calendar = Calendar.current
+        
+        // Group weights by week
+        var weeklyGroups: [Date: [WeightSample]] = [:]
+        for weight in sortedWeights {
+            let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: weight.date)) ?? weight.date
+            weeklyGroups[weekStart, default: []].append(weight)
+        }
+        
+        // Get average weight for each week
+        var results: [(weekStart: Date, weight: Double)] = []
+        for (weekStart, weekWeights) in weeklyGroups.sorted(by: { $0.key < $1.key }) {
+            let avgWeight = weekWeights.map { $0.kilograms }.reduce(0, +) / Double(weekWeights.count)
+            results.append((weekStart: weekStart, weight: avgWeight))
+        }
+        
+        return results.suffix(12) // Last 12 weeks
+    }
+    
     /// Calculate weight change for each week
     static func weeklyChanges(weights: [WeightSample]) -> [(weekStart: Date, change: Double)] {
         guard !weights.isEmpty else { return [] }
@@ -54,9 +78,30 @@ struct WeightAnalysisService {
                 let avg = changes.reduce(0, +) / Double(changes.count)
                 let dayName = dayNames[dayOfWeek - 1]
                 results.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: avg))
+            } else {
+                // Include days with no data as 0
+                let dayName = dayNames[dayOfWeek - 1]
+                results.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: 0))
             }
         }
         
         return results.sorted { $0.dayOfWeek < $1.dayOfWeek }
+    }
+    
+    /// Calculate daily weight change patterns (which specific days show most change)
+    static func dailyWeightChanges(weights: [WeightSample]) -> [(date: Date, change: Double)] {
+        guard weights.count >= 2 else { return [] }
+        
+        let sortedWeights = weights.sorted { $0.date < $1.date }
+        var results: [(date: Date, change: Double)] = []
+        
+        for i in 1..<sortedWeights.endIndex {
+            let prevWeight = sortedWeights[i-1]
+            let currWeight = sortedWeights[i]
+            let change = currWeight.kilograms - prevWeight.kilograms
+            results.append((date: currWeight.date, change: change))
+        }
+        
+        return results
     }
 }

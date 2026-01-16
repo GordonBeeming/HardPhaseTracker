@@ -30,12 +30,20 @@ struct AnalysisView: View {
         SleepFastingCorrelationService.rows(sleepNights: health.sleepLast7Nights, mealEntries: mealEntries)
     }
     
+    private var weeklyWeightTrend: [(weekStart: Date, weight: Double)] {
+        WeightAnalysisService.weeklyWeightTrend(weights: health.allWeights)
+    }
+    
     private var weeklyWeightChanges: [(weekStart: Date, change: Double)] {
         WeightAnalysisService.weeklyChanges(weights: health.allWeights)
     }
     
     private var averageWeightChangeByDayOfWeek: [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
         WeightAnalysisService.averageChangeByDayOfWeek(weights: health.allWeights)
+    }
+    
+    private var dailyWeightChanges: [(date: Date, change: Double)] {
+        WeightAnalysisService.dailyWeightChanges(weights: health.allWeights)
     }
 
     var body: some View {
@@ -103,8 +111,16 @@ struct AnalysisView: View {
 
                 if health.permission == .authorized && !health.allWeights.isEmpty {
                     Section("Weight Analysis") {
+                        NavigationLink("Weekly Weight Trend") {
+                            WeeklyWeightTrendView(weeklyWeights: weeklyWeightTrend)
+                        }
+                        
                         NavigationLink("Weight Change by Week") {
                             WeightByWeekView(weeklyChanges: weeklyWeightChanges)
+                        }
+                        
+                        NavigationLink("Daily Weight Changes") {
+                            DailyWeightChangeView(dailyChanges: dailyWeightChanges)
                         }
                         
                         NavigationLink("Weight Change by Day of Week") {

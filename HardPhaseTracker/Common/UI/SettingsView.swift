@@ -75,6 +75,7 @@ struct SettingsView: View {
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var isPickingSchedule = false
+    @State private var includeHealthDataInExport = false
 
     var body: some View {
         Group {
@@ -440,6 +441,12 @@ struct SettingsView: View {
                 }
                 
                 Section("Backup & Restore") {
+                    Toggle("Include health data", isOn: $includeHealthDataInExport)
+                    
+                    Text("When enabled, exports will include cached HealthKit data (weights, body fat, sleep).")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    
                     Button {
                         exportData()
                     } label: {
@@ -562,7 +569,11 @@ struct SettingsView: View {
         
         Task {
             do {
-                let data = try DataExportImportService.exportAllData(modelContext: modelContext)
+                let data = try DataExportImportService.exportAllData(
+                    modelContext: modelContext,
+                    includeHealthData: includeHealthDataInExport,
+                    healthKitViewModel: includeHealthDataInExport ? health : nil
+                )
                 await MainActor.run {
                     exportedData = data
                     showingExportShare = true
@@ -661,6 +672,7 @@ struct SettingsView: View {
                 let result = try DataExportImportService.importAllData(
                     from: data,
                     into: modelContext,
+                    healthKitViewModel: health,
                     mergeStrategy: .replace
                 )
                 await MainActor.run {

@@ -15,6 +15,7 @@ final class HealthKitViewModel: ObservableObject {
     @Published private(set) var latestWeight: WeightSample?
     @Published private(set) var latestBodyFat: BodyFatSample?
     @Published private(set) var allWeights: [WeightSample] = [] // All weights up to maxDays
+    @Published private(set) var allBodyFat: [BodyFatSample] = [] // All body fat samples up to maxDays
     @Published private(set) var firstWeight: WeightSample?
     @Published private(set) var allSleepNights: [SleepNight] = [] // All sleep up to maxDays
     @Published private(set) var errorMessage: String?
@@ -41,12 +42,13 @@ final class HealthKitViewModel: ObservableObject {
         var latestWeight: WeightSample?
         var latestBodyFat: BodyFatSample?
         var allWeights: [WeightSample]? // Optional for migration
+        var allBodyFat: [BodyFatSample]? // Optional for migration
         var firstWeight: WeightSample? // Optional for migration
         var allSleepNights: [SleepNight]? // Optional for migration
         var updatedAt: Date
     }
 
-    private static let cacheKey = "healthkit.cache.v2" // Bumped version for new fields
+    private static let cacheKey = "healthkit.cache.v3" // Bumped version for allBodyFat field
     private static let disconnectedKey = "healthkit.userDisconnected"
 
     @Published private(set) var cacheUpdatedAt: Date?
@@ -224,6 +226,7 @@ final class HealthKitViewModel: ObservableObject {
         latestWeight = nil
         latestBodyFat = nil
         allWeights = []
+        allBodyFat = []
         firstWeight = nil
         allSleepNights = []
     }
@@ -233,6 +236,31 @@ final class HealthKitViewModel: ObservableObject {
         isDisconnected = true
         UserDefaults.standard.set(true, forKey: Self.disconnectedKey)
         permission = .notDetermined
+    }
+    
+    /// Restore health data from backup (for testing purposes)
+    /// This updates the local cache without syncing to HealthKit
+    func restoreHealthData(
+        weights: [WeightSample]?,
+        bodyFat: [BodyFatSample]?,
+        sleepNights: [SleepNight]?
+    ) {
+        if let weights = weights {
+            allWeights = weights
+            firstWeight = weights.first
+            latestWeight = weights.last
+        }
+        
+        if let bodyFat = bodyFat {
+            allBodyFat = bodyFat
+            latestBodyFat = bodyFat.last
+        }
+        
+        if let sleepNights = sleepNights {
+            allSleepNights = sleepNights
+        }
+        
+        saveCache()
     }
 
     private func refreshPermission() async {
@@ -284,6 +312,7 @@ final class HealthKitViewModel: ObservableObject {
         latestWeight = payload.latestWeight
         latestBodyFat = payload.latestBodyFat
         allWeights = payload.allWeights ?? []
+        allBodyFat = payload.allBodyFat ?? []
         firstWeight = payload.firstWeight
         allSleepNights = payload.allSleepNights ?? []
         cacheUpdatedAt = payload.updatedAt
@@ -303,6 +332,7 @@ final class HealthKitViewModel: ObservableObject {
             latestWeight: latestWeight,
             latestBodyFat: latestBodyFat,
             allWeights: allWeights,
+            allBodyFat: allBodyFat,
             firstWeight: firstWeight,
             allSleepNights: allSleepNights,
             updatedAt: Date()
