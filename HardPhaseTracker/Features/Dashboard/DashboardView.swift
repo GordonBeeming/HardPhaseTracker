@@ -223,17 +223,29 @@ private struct DashboardWeightTrendCardView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     let yBounds = calculateYAxisBounds()
-                    Chart(health.weightsLast14Days) { s in
-                        LineMark(
-                            x: .value("Date", s.date),
-                            y: .value("Weight", displayValue(kilograms: s.kilograms))
-                        )
-                        .interpolationMethod(.catmullRom)
+                    Chart {
+                        ForEach(health.weightsLast14Days, id: \.date) { s in
+                            LineMark(
+                                x: .value("Date", s.date),
+                                y: .value("Weight", displayValue(kilograms: s.kilograms))
+                            )
+                            .interpolationMethod(.catmullRom)
 
-                        PointMark(
-                            x: .value("Date", s.date),
-                            y: .value("Weight", displayValue(kilograms: s.kilograms))
-                        )
+                            PointMark(
+                                x: .value("Date", s.date),
+                                y: .value("Weight", displayValue(kilograms: s.kilograms))
+                            )
+                        }
+                        
+                        // Show goal line if goal is set and visible in chart range
+                        if let goalKg = weightGoalKg {
+                            let goalDisplay = displayValue(kilograms: goalKg)
+                            if goalDisplay >= yBounds.min && goalDisplay <= yBounds.max {
+                                RuleMark(y: .value("Goal", goalDisplay))
+                                    .foregroundStyle(.red.opacity(0.5))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                            }
+                        }
                     }
                     .chartYScale(domain: yBounds.min...yBounds.max)
                     .frame(height: 120)
@@ -275,22 +287,16 @@ private struct DashboardWeightTrendCardView: View {
             return (min: 0, max: 100)
         }
 
-        // Calculate lower bound: use the lower of (goal - 5) OR (current weight - 5)
-        // This ensures we show enough range to see progress toward goal
-        var lowerBound = dataMax - 5
-
-        if let goalKg = weightGoalKg {
-            let goalDisplay = displayValue(kilograms: goalKg)
-            let goalBasedLower = goalDisplay - 5
-            lowerBound = min(lowerBound, goalBasedLower)
-        }
-
+        // Calculate lower bound: current weight - 2, rounded down to nearest 5
+        let currentMinus2 = dataMax - 2
+        let lowerBound = floor(currentMinus2 / 5) * 5
+        
         // Use the actual data minimum if it's lower than our calculated bound
-        lowerBound = min(lowerBound, dataMin)
+        let finalLowerBound = min(lowerBound, dataMin)
 
         // Add small padding for visual spacing
         let padding = 2.0
-        let finalMin = max(0, lowerBound - padding)
+        let finalMin = max(0, finalLowerBound - padding)
         let finalMax = dataMax + padding
 
         return (min: finalMin, max: finalMax)
