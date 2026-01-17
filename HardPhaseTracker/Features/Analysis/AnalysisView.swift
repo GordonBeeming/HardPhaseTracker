@@ -37,6 +37,10 @@ struct AnalysisView: View {
     private var averageWeightChangeByDayOfWeek: [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
         WeightAnalysisService.averageChangeByDayOfWeek(weights: health.allWeights)
     }
+    
+    private var appSettings: AppSettings? {
+        settings.first
+    }
 
     var body: some View {
         NavigationStack {
@@ -177,7 +181,9 @@ struct AnalysisView: View {
             }
             .task {
                 // Prefer cached data for fast load; only hit HealthKit when cache is empty/stale.
-                await health.refreshIfCacheStale()
+                let maxDays = appSettings?.healthDataMaxPullDays ?? 90
+                let startDate = appSettings?.healthMonitoringStartDate
+                await health.refreshIfCacheStale(maxDays: maxDays, startDate: startDate)
             }
         }
         .appScreen()
