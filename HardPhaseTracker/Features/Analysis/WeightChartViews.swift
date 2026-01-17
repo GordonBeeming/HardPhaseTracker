@@ -15,7 +15,7 @@ struct WeightByWeekView: View {
                     Chart(weeklyChanges, id: \.weekStart) { item in
                         BarMark(
                             x: .value("Week", item.weekStart, unit: .weekOfYear),
-                            y: .value("Change", item.change)
+                            y: .value("Change", -item.change)
                         )
                         .foregroundStyle(item.change < 0 ? .green : .orange)
                     }
@@ -28,7 +28,7 @@ struct WeightByWeekView: View {
             } header: {
                 Text("Weekly Weight Change")
             } footer: {
-                Text("Shows weight change per week. Green = weight loss, Orange = weight gain.")
+                Text("Shows weight change per week. Green bars above = weight loss, Orange bars below = weight gain.")
             }
             
             Section("Details") {
@@ -75,7 +75,7 @@ struct WeightByDayOfWeekView: View {
                     Chart(dayData, id: \.dayOfWeek) { item in
                         BarMark(
                             x: .value("Day", item.dayName),
-                            y: .value("Avg Change", item.avgChange)
+                            y: .value("Avg Change", -item.avgChange)
                         )
                         .foregroundStyle(item.avgChange < 0 ? .green : .orange)
                     }
@@ -88,7 +88,7 @@ struct WeightByDayOfWeekView: View {
             } header: {
                 Text("Average Weight Change by Day")
             } footer: {
-                Text("Shows average weight change for each day of the week. Green = typical weight loss, Orange = typical weight gain.")
+                Text("Shows average weight change for each day of the week. Green bars above = typical weight loss, Orange bars below = typical weight gain.")
             }
             
             Section("Details") {
@@ -107,127 +107,6 @@ struct WeightByDayOfWeekView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background(colorScheme))
-    }
-    
-    private func formatChange(_ change: Double) -> String {
-        let sign = change >= 0 ? "+" : ""
-        return String(format: "%@%.2f kg", sign, change)
-    }
-}
-
-struct WeeklyWeightTrendView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let weeklyWeights: [(weekStart: Date, weight: Double)]
-    
-    var body: some View {
-        List {
-            Section {
-                if weeklyWeights.isEmpty {
-                    Text("Not enough weight data to show weekly trend.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Chart(weeklyWeights, id: \.weekStart) { item in
-                        LineMark(
-                            x: .value("Week", item.weekStart, unit: .weekOfYear),
-                            y: .value("Weight", item.weight)
-                        )
-                        .interpolationMethod(.catmullRom)
-                        .foregroundStyle(.blue)
-                        
-                        PointMark(
-                            x: .value("Week", item.weekStart, unit: .weekOfYear),
-                            y: .value("Weight", item.weight)
-                        )
-                        .foregroundStyle(.blue)
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading)
-                    }
-                    .frame(height: 250)
-                    .padding(.vertical, 8)
-                }
-            } header: {
-                Text("Weekly Weight Trend")
-            } footer: {
-                Text("Shows average weight for each week over the last 12 weeks.")
-            }
-            
-            Section("Details") {
-                ForEach(weeklyWeights.reversed(), id: \.weekStart) { item in
-                    HStack {
-                        Text(formatWeek(item.weekStart))
-                        Spacer()
-                        Text(String(format: "%.1f kg", item.weight))
-                    }
-                }
-            }
-        }
-        .navigationTitle("Weekly Weight Trend")
-        .navigationBarTitleDisplayMode(.inline)
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(AppTheme.background(colorScheme))
-    }
-    
-    private func formatWeek(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return "Week of \(formatter.string(from: date))"
-    }
-}
-
-struct DailyWeightChangeView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let dailyChanges: [(date: Date, change: Double)]
-    
-    var body: some View {
-        List {
-            Section {
-                if dailyChanges.isEmpty {
-                    Text("Not enough weight data to show daily changes.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Chart(dailyChanges, id: \.date) { item in
-                        BarMark(
-                            x: .value("Date", item.date, unit: .day),
-                            y: .value("Change", item.change)
-                        )
-                        .foregroundStyle(item.change < 0 ? .green : .orange)
-                    }
-                    .chartYAxis {
-                        AxisMarks(position: .leading)
-                    }
-                    .frame(height: 250)
-                    .padding(.vertical, 8)
-                }
-            } header: {
-                Text("Daily Weight Changes")
-            } footer: {
-                Text("Shows daily weight changes. Green = weight loss, Orange = weight gain.")
-            }
-            
-            Section("Details") {
-                ForEach(dailyChanges.reversed(), id: \.date) { item in
-                    HStack {
-                        Text(formatDate(item.date))
-                        Spacer()
-                        Text(formatChange(item.change))
-                            .foregroundStyle(item.change < 0 ? .green : .orange)
-                    }
-                }
-            }
-        }
-        .navigationTitle("Daily Weight Changes")
-        .navigationBarTitleDisplayMode(.inline)
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(AppTheme.background(colorScheme))
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: date)
     }
     
     private func formatChange(_ change: Double) -> String {

@@ -461,32 +461,17 @@ final class DataExportImportService {
         var sleepNightsImported = 0
         
         if let healthKitVM = healthKitViewModel {
-            if let weights = exportData.weightSamples {
-                healthKitVM.restoreHealthData(weights: weights, bodyFat: nil, sleepNights: nil)
-                weightsImported = weights.count
-                healthDataImported = true
-                logger.info("Restored \(weights.count) weight samples to HealthKit cache")
-            }
+            let weights = exportData.weightSamples
+            let bodyFat = exportData.bodyFatSamples
+            let sleepNights = exportData.sleepNights
             
-            if let bodyFat = exportData.bodyFatSamples {
-                healthKitVM.restoreHealthData(weights: nil, bodyFat: bodyFat, sleepNights: nil)
-                bodyFatImported = bodyFat.count
-                healthDataImported = true
-                logger.info("Restored \(bodyFat.count) body fat samples to HealthKit cache")
-            }
-            
-            if let sleepNights = exportData.sleepNights {
-                healthKitVM.restoreHealthData(weights: nil, bodyFat: nil, sleepNights: sleepNights)
-                sleepNightsImported = sleepNights.count
-                healthDataImported = true
-                logger.info("Restored \(sleepNights.count) sleep nights to HealthKit cache")
-            }
-            
-            // If we have all three types, restore them together
-            if let weights = exportData.weightSamples,
-               let bodyFat = exportData.bodyFatSamples,
-               let sleepNights = exportData.sleepNights {
+            if weights != nil || bodyFat != nil || sleepNights != nil {
                 healthKitVM.restoreHealthData(weights: weights, bodyFat: bodyFat, sleepNights: sleepNights)
+                weightsImported = weights?.count ?? 0
+                bodyFatImported = bodyFat?.count ?? 0
+                sleepNightsImported = sleepNights?.count ?? 0
+                healthDataImported = true
+                logger.info("Restored health data: \(weightsImported) weights, \(bodyFatImported) body fat, \(sleepNightsImported) sleep nights")
             }
         }
         

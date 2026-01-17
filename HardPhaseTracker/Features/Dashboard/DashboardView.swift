@@ -258,19 +258,49 @@ private struct DashboardWeightTrendCardView: View {
                 }
 
             case .notAvailable:
-                Text("Apple Health isn’t available on this device.")
+                Text("Apple Health isn't available on this device.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
             case .notDetermined, .denied:
-                Text("Connect Apple Health to show your weight trend.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                // Show chart with cached/imported data if available
+                if !health.weightsLast14Days.isEmpty {
+                    let yBounds = calculateYAxisBounds()
+                    Chart {
+                        ForEach(health.weightsLast14Days, id: \.date) { s in
+                            LineMark(
+                                x: .value("Date", s.date),
+                                y: .value("Weight", displayValue(kilograms: s.kilograms))
+                            )
+                            .interpolationMethod(.catmullRom)
 
-                Button("Open Settings") {
-                    onOpenSettings()
+                            PointMark(
+                                x: .value("Date", s.date),
+                                y: .value("Weight", displayValue(kilograms: s.kilograms))
+                            )
+                        }
+                        
+                        // Show goal line if goal is set and visible in chart range
+                        if let goalKg = weightGoalKg {
+                            let goalDisplay = displayValue(kilograms: goalKg)
+                            if goalDisplay >= yBounds.min && goalDisplay <= yBounds.max {
+                                RuleMark(y: .value("Goal", goalDisplay))
+                                    .foregroundStyle(.red.opacity(0.5))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                            }
+                        }
+                    }
+                    .chartYScale(domain: yBounds.min...yBounds.max)
+                    .frame(height: 120)
+                    
+                    Text("Using imported health data. Connect to Apple Health to sync live data.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Connect to Apple Health to view weight trends.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.footnote)
             }
         }
         .padding(16)

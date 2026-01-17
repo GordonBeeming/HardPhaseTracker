@@ -50,6 +50,7 @@ final class HealthKitViewModel: ObservableObject {
 
     private static let cacheKey = "healthkit.cache.v3" // Bumped version for allBodyFat field
     private static let disconnectedKey = "healthkit.userDisconnected"
+    private static let healthDataImportedNotification = Notification.Name("HealthKitViewModel.healthDataImported")
 
     @Published private(set) var cacheUpdatedAt: Date?
     @Published private(set) var isDisconnected: Bool = false
@@ -59,6 +60,15 @@ final class HealthKitViewModel: ObservableObject {
         isDisconnected = UserDefaults.standard.bool(forKey: Self.disconnectedKey)
         loadCache()
         Task { await refreshPermission() }
+        
+        // Listen for health data import notifications
+        NotificationCenter.default.addObserver(
+            forName: Self.healthDataImportedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loadCache()
+        }
     }
 
     func requestAccess() async {
@@ -261,6 +271,9 @@ final class HealthKitViewModel: ObservableObject {
         }
         
         saveCache()
+        
+        // Notify other HealthKitViewModel instances to reload from cache
+        NotificationCenter.default.post(name: Self.healthDataImportedNotification, object: nil)
     }
 
     private func refreshPermission() async {
