@@ -105,8 +105,14 @@ struct AnalysisView: View {
 
                         if let w = health.latestWeight {
                             LabeledContent("Latest weight") {
-                                Text(formatWeightWithDelta(w.kilograms, delta: weightDelta))
-                                    .foregroundStyle(deltaColor(weightDelta))
+                                HStack(spacing: 4) {
+                                    Text(String(format: "%.1f kg", w.kilograms))
+                                        .foregroundStyle(.primary)
+                                    if let delta = weightDelta {
+                                        Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                            .foregroundStyle(delta < 0 ? .green : .orange)
+                                    }
+                                }
                             }
                         } else {
                             LabeledContent("Latest weight", value: "—")
@@ -120,19 +126,33 @@ struct AnalysisView: View {
 
                         if !health.weightsLast7Days.isEmpty {
                             NavigationLink("Weight (last 7 days)") {
-                                List(health.weightsLast7Days) { s in
-                                    LabeledContent(s.date.formatted(date: .abbreviated, time: .omitted), value: String(format: "%.1f kg", s.kilograms))
-                                }
-                                .navigationTitle("Weight")
+                                WeightDetailView(
+                                    weights: health.allWeights,
+                                    selectedDaysRange: Binding(
+                                        get: { appSettings?.weightChartDaysRange ?? 14 },
+                                        set: { newValue in
+                                            if let settings = appSettings {
+                                                settings.weightChartDaysRange = newValue == 0 ? nil : newValue
+                                            }
+                                        }
+                                    )
+                                )
                             }
                         }
 
                         if !health.sleepLast7Nights.isEmpty {
                             NavigationLink("Sleep (last 7 nights)") {
-                                List(health.sleepLast7Nights) { n in
-                                    LabeledContent(n.date.formatted(date: .abbreviated, time: .omitted), value: formatHours(n.asleepSeconds))
-                                }
-                                .navigationTitle("Sleep")
+                                SleepDetailView(
+                                    sleepNights: health.allSleepNights,
+                                    selectedDaysRange: Binding(
+                                        get: { appSettings?.sleepChartDaysRange ?? 14 },
+                                        set: { newValue in
+                                            if let settings = appSettings {
+                                                settings.sleepChartDaysRange = newValue == 0 ? nil : newValue
+                                            }
+                                        }
+                                    )
+                                )
                             }
                         }
                     }
@@ -144,44 +164,6 @@ struct AnalysisView: View {
                 }
 
                 if (health.permission == .authorized || !health.allWeights.isEmpty) && !health.allWeights.isEmpty {
-                    Section {
-                        Picker("Weight chart range", selection: Binding(
-                            get: { appSettings?.weightChartDaysRange ?? 14 },
-                            set: { newValue in
-                                if let settings = appSettings {
-                                    settings.weightChartDaysRange = newValue == 0 ? nil : newValue
-                                }
-                            }
-                        )) {
-                            Text("14 days").tag(14)
-                            Text("30 days").tag(30)
-                            Text("60 days").tag(60)
-                            Text("90 days").tag(90)
-                            Text("All data").tag(0)
-                        }
-                        .pickerStyle(.menu)
-                        
-                        Picker("Sleep chart range", selection: Binding(
-                            get: { appSettings?.sleepChartDaysRange ?? 14 },
-                            set: { newValue in
-                                if let settings = appSettings {
-                                    settings.sleepChartDaysRange = newValue == 0 ? nil : newValue
-                                }
-                            }
-                        )) {
-                            Text("14 days").tag(14)
-                            Text("30 days").tag(30)
-                            Text("60 days").tag(60)
-                            Text("90 days").tag(90)
-                            Text("All data").tag(0)
-                        }
-                        .pickerStyle(.menu)
-                    } header: {
-                        Text("Chart Display Options")
-                    } footer: {
-                        Text("Choose how many days of data to display in the weight and sleep analysis charts. Default is 14 days.")
-                    }
-                    
                     Section("Weight Analysis") {
                         NavigationLink("Weight Change by Week") {
                             WeightByWeekView(weeklyChanges: weeklyWeightChanges)
