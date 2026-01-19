@@ -16,6 +16,7 @@ struct MealQuickLogView: View {
     let onLogged: (() -> Void)?
 
     @State private var selectedTemplate: MealTemplate?
+    @State private var isLoggingInline = false
 
     init(defaultTimestamp: Date = .now, includeElectrolytes: Bool = false, onlyElectrolytes: Bool = false, onLogged: (() -> Void)? = nil) {
         self.defaultTimestamp = defaultTimestamp
@@ -73,25 +74,47 @@ struct MealQuickLogView: View {
                     }
                 } else {
                     List {
-                        ForEach(visibleTemplates) { template in
-                            Button {
-                                if includeElectrolytes, template.kind == MealTemplateKind.electrolyte.rawValue {
-                                    logElectrolyte(template: template)
-                                } else {
-                                    selectedTemplate = template
+                        // Quick log inline meal section (not available for electrolytes)
+                        if !onlyElectrolytes {
+                            Section {
+                                Button {
+                                    isLoggingInline = true
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "note.text")
+                                            .foregroundStyle(.secondary)
+                                        Text("Quick log (no macros)")
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
                                 }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
-                                        .foregroundStyle(.secondary)
-                                    Text(template.name)
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        
+                        Section(onlyElectrolytes ? "" : "From Template") {
+                            ForEach(visibleTemplates) { template in
+                                Button {
+                                    if includeElectrolytes, template.kind == MealTemplateKind.electrolyte.rawValue {
+                                        logElectrolyte(template: template)
+                                    } else {
+                                        selectedTemplate = template
+                                    }
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                            .foregroundStyle(.secondary)
+                                        Text(template.name)
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
@@ -105,6 +128,12 @@ struct MealQuickLogView: View {
             .sheet(item: $selectedTemplate) { template in
                 MealLogWithTimeView(
                     template: template,
+                    defaultTimestamp: defaultTimestamp,
+                    onLogged: didLog
+                )
+            }
+            .sheet(isPresented: $isLoggingInline) {
+                InlineMealLogView(
                     defaultTimestamp: defaultTimestamp,
                     onLogged: didLog
                 )

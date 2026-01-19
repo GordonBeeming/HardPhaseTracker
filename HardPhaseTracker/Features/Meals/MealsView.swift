@@ -7,6 +7,8 @@ struct MealsView: View {
 
     @Query(sort: [SortDescriptor(\MealTemplate.name)])
     private var templates: [MealTemplate]
+    
+    @Query private var mealLogEntries: [MealLogEntry]
 
     @State private var isAdding = false
     @State private var isDuplicating = false
@@ -14,11 +16,21 @@ struct MealsView: View {
     @State private var templateToNavigateTo: MealTemplate?
     @State private var isShowingSettings = false
     @State private var selectedTemplate: MealTemplate?
+    
+    // Filter out templates that are only used for inline meals
+    private var visibleTemplates: [MealTemplate] {
+        templates.filter { template in
+            // Keep templates that have no meal log entries (never used)
+            // or have at least one non-inline entry (used as a real template)
+            let entries = template.mealLogEntries ?? []
+            return entries.isEmpty || entries.contains { !$0.isInline }
+        }
+    }
 
     var body: some View {
         NavigationSplitView {
             Group {
-                if templates.isEmpty {
+                if visibleTemplates.isEmpty {
                     ContentUnavailableView(
                         "No meals yet",
                         systemImage: "fork.knife",
@@ -27,7 +39,7 @@ struct MealsView: View {
                     .background(AppTheme.background(colorScheme))
                 } else {
                     List(selection: $selectedTemplate) {
-                        ForEach(templates) { template in
+                        ForEach(visibleTemplates) { template in
                             NavigationLink(value: template) {
                                 HStack(spacing: 10) {
                                     Image(systemName: (template.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")

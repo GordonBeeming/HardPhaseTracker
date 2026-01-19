@@ -193,8 +193,17 @@ private struct DashboardWeightTrendCardView: View {
                 Spacer()
 
                 if let w = health.latestWeight {
-                    Text(formatWeight(kilograms: w.kilograms))
-                        .font(.headline)
+                    HStack(spacing: 4) {
+                        Text(formatWeight(kilograms: w.kilograms))
+                            .font(.headline)
+                        
+                        // Show 7-day delta in brackets with color if available
+                        if let delta7Days = calculate7DayDelta() {
+                            Text(formatDelta(delta7Days))
+                                .font(.headline)
+                                .foregroundStyle(delta7Days < 0 ? .green : .orange)
+                        }
+                    }
                 }
             }
 
@@ -203,15 +212,15 @@ private struct DashboardWeightTrendCardView: View {
                 let lostKg = first.kilograms - latest.kilograms
                 if lostKg > 0 {
                     let duration = formatDuration(from: first.date, to: latest.date)
-                    Text("Lost \(formatWeight(kilograms: lostKg)) in \(duration)")
+                    let bodyFatText = health.latestBodyFat.map { String(format: " • Body fat %.1f%%", $0.percent) } ?? ""
+                    Text("Lost \(formatWeight(kilograms: lostKg)) in \(duration)\(bodyFatText)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            }
-
-            if let bf = health.latestBodyFat {
+            } else if let bf = health.latestBodyFat {
+                // Show body fat alone if no weight loss info
                 Text(String(format: "Body fat %.1f%%", bf.percent))
-                    .font(.footnote)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
@@ -326,7 +335,8 @@ private struct DashboardWeightTrendCardView: View {
         // e.g., 177.69 → 180; 175.0 → 175
         let upperBound = ceil(dataMax / 5) * 5
 
-        let finalMin = max(0, lowerBound)
+        // Add 2 units of padding below minimum for better visibility
+        let finalMin = max(0, lowerBound - 2)
         let finalMax = upperBound
 
         return (min: finalMin, max: finalMax)
@@ -371,6 +381,29 @@ private struct DashboardWeightTrendCardView: View {
             return String(format: "%.1f kg", kilograms)
         case .imperial:
             return String(format: "%.1f lb", kilograms * 2.20462262)
+        }
+    }
+    
+    private func calculate7DayDelta() -> Double? {
+        guard let latest = health.latestWeight else { return nil }
+        
+        // Find the second most recent weight (previous weight before latest)
+        let previousWeight = health.allWeights
+            .filter { $0.date < latest.date }
+            .last // Get the most recent one before latest
+        
+        guard let previous = previousWeight else { return nil }
+        
+        return latest.kilograms - previous.kilograms
+    }
+    
+    private func formatDelta(_ deltaKg: Double) -> String {
+        let sign = deltaKg >= 0 ? "+" : ""
+        switch unitSystem {
+        case .metric:
+            return String(format: "(%@%.1f)", sign, deltaKg)
+        case .imperial:
+            return String(format: "(%@%.1f)", sign, deltaKg * 2.20462262)
         }
     }
 }

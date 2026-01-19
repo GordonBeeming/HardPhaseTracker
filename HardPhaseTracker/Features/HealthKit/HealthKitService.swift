@@ -90,6 +90,29 @@ final class HealthKitService {
         }
     }
 
+    func fetchBodyFatSamples(lastDays days: Int, startDate: Date? = nil) async throws -> [BodyFatSample] {
+        guard let type = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage) else { return [] }
+        
+        // Calculate effective start date (respect both lastDays and monitoring start date).
+        let daysStart = HealthKitQuerySupport.startDateForLastDays(days)
+        let effectiveStart = startDate.map { max($0, daysStart) } ?? daysStart
+        
+        let predicate = HKQuery.predicateForSamples(withStart: effectiveStart, end: Date(), options: [])
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sort]) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                let mapped = (samples as? [HKQuantitySample])?.map(HealthKitQuerySupport.mapBodyFat) ?? []
+                continuation.resume(returning: mapped)
+            }
+            store.execute(query)
+        }
+    }
+
     func fetchWeightSamples(lastDays days: Int, startDate: Date? = nil) async throws -> [WeightSample] {
         guard let type = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return [] }
         

@@ -90,10 +90,11 @@ final class DataExportImportService {
         let electrolyteTemplateIds: [String]
         let electrolyteSelectionMode: String?
         let unitSystem: String?
-        let weeklyProteinGoalGrams: Double?
         let weightGoalKg: Double?
         let healthMonitoringStartDate: Date?
         let healthDataMaxPullDays: Int?
+        let weightChartDaysRange: Int?
+        let sleepChartDaysRange: Int?
     }
     
     // MARK: - Export
@@ -209,10 +210,11 @@ final class DataExportImportService {
                 electrolyteTemplateIds: electrolyteTemplateIds,
                 electrolyteSelectionMode: settings.electrolyteSelectionMode,
                 unitSystem: settings.unitSystem,
-                weeklyProteinGoalGrams: settings.weeklyProteinGoalGrams,
                 weightGoalKg: settings.weightGoalKg,
                 healthMonitoringStartDate: settings.healthMonitoringStartDate,
-                healthDataMaxPullDays: settings.healthDataMaxPullDays
+                healthDataMaxPullDays: settings.healthDataMaxPullDays,
+                weightChartDaysRange: settings.weightChartDaysRange,
+                sleepChartDaysRange: settings.sleepChartDaysRange
             )
         }
         
@@ -441,10 +443,11 @@ final class DataExportImportService {
             settings.mealTimeOffsetStyle = exportSettings.mealTimeOffsetStyle
             settings.electrolyteSelectionMode = exportSettings.electrolyteSelectionMode
             settings.unitSystem = exportSettings.unitSystem
-            settings.weeklyProteinGoalGrams = exportSettings.weeklyProteinGoalGrams
             settings.weightGoalKg = exportSettings.weightGoalKg
             settings.healthMonitoringStartDate = exportSettings.healthMonitoringStartDate
             settings.healthDataMaxPullDays = exportSettings.healthDataMaxPullDays
+            settings.weightChartDaysRange = exportSettings.weightChartDaysRange
+            settings.sleepChartDaysRange = exportSettings.sleepChartDaysRange
             
             // Link electrolyte templates
             let electrolyteTemplates = exportSettings.electrolyteTemplateIds.compactMap { templateMap[$0] }

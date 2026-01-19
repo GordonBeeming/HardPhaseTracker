@@ -16,7 +16,6 @@ struct SettingsView: View {
         case dashboard = "Dashboard"
         case meals = "Meals"
         case electrolytes = "Electrolytes"
-        case analysis = "Analysis"
         case health = "Health"
         case data = "Data"
 
@@ -27,7 +26,6 @@ struct SettingsView: View {
             case .dashboard: "rectangle.3.group"
             case .meals: "fork.knife"
             case .electrolytes: "drop"
-            case .analysis: "chart.line.uptrend.xyaxis"
             case .health: "heart"
             case .data: "arrow.down.doc"
             }
@@ -54,9 +52,6 @@ struct SettingsView: View {
 
     // Global
     @State private var unitSystem: UnitSystem = .metric
-
-    // Analysis
-    @State private var weeklyProteinGoalGrams: Int = 0
 
     // Health
     @State private var weightGoalDisplay: Double = 0 // Display value in user's unit
@@ -132,8 +127,6 @@ struct SettingsView: View {
 
             unitSystem = current.unitSystemEnum
 
-            weeklyProteinGoalGrams = Int(current.weeklyProteinGoalGrams ?? 0)
-
             let weightGoalKg = current.weightGoalKg ?? 0
             weightGoalDisplay = unitSystem == .metric ? weightGoalKg : weightGoalKg * 2.20462262
 
@@ -159,7 +152,6 @@ struct SettingsView: View {
             ElectrolyteTargetService.upsertToday(servingsPerDay: newValue, modelContext: modelContext)
         }
         .onChange(of: electrolyteAskEachTime) { _, _ in save() }
-        .onChange(of: weeklyProteinGoalGrams) { _, _ in save() }
         .onChange(of: unitSystem) { oldValue, newValue in
             // Convert weight goal display when unit system changes
             if oldValue != newValue {
@@ -273,17 +265,6 @@ struct SettingsView: View {
                     }
 
                     Text("Selected templates are offered when you tick off a serving.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-            case .analysis:
-                Section("Weekly protein goal") {
-                    Stepper(value: $weeklyProteinGoalGrams, in: 0...5000, step: 25) {
-                        Text(weeklyProteinGoalGrams == 0 ? "Off" : "\(weeklyProteinGoalGrams) g per week")
-                    }
-
-                    Text("Used by Analysis → Protein. Set to 0 to disable.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -553,7 +534,6 @@ struct SettingsView: View {
         current.electrolyteSelectionMode = electrolyteAskEachTime ? "askEachTime" : "fixed"
 
         current.unitSystem = unitSystem.rawValue
-        current.weeklyProteinGoalGrams = Double(weeklyProteinGoalGrams)
 
         // Convert weight goal display to kg for storage
         let weightGoalKg = unitSystem == .metric ? weightGoalDisplay : weightGoalDisplay / 2.20462262

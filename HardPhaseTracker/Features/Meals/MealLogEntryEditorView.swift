@@ -19,22 +19,30 @@ struct MealLogEntryEditorView: View {
     @State private var timestamp: Date
     @State private var notes: String
     @State private var selectedTemplate: MealTemplate?
+    @State private var inlineMealName: String
 
     init(entry: MealLogEntry) {
         self.entry = entry
         _timestamp = State(initialValue: entry.timestamp)
         _notes = State(initialValue: entry.notes ?? "")
         _selectedTemplate = State(initialValue: entry.template)
+        _inlineMealName = State(initialValue: entry.template?.name ?? "")
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Meal") {
-                    Picker("Template", selection: $selectedTemplate) {
-                        ForEach(mealTemplates) { t in
-                            Label(t.name, systemImage: (t.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
-                                .tag(Optional(t))
+                    if entry.isInline {
+                        // For inline meals, edit the template name directly
+                        TextField("Meal name", text: $inlineMealName)
+                    } else {
+                        // For regular meals, pick from templates
+                        Picker("Template", selection: $selectedTemplate) {
+                            ForEach(mealTemplates) { t in
+                                Label(t.name, systemImage: (t.kind == MealTemplateKind.electrolyte.rawValue) ? "drop.fill" : "fork.knife")
+                                    .tag(Optional(t))
+                            }
                         }
                     }
                 }
@@ -60,16 +68,24 @@ struct MealLogEntryEditorView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        guard let selectedTemplate else { return }
                         entry.timestamp = timestamp
                         let tz = TimeZone(identifier: entry.timeZoneIdentifier) ?? .current
                         entry.utcOffsetSeconds = tz.secondsFromGMT(for: timestamp)
-                        entry.template = selectedTemplate
                         entry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
+                        
+                        if entry.isInline {
+                            // Update the inline template's name
+                            entry.template?.name = inlineMealName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        } else {
+                            // Update the template reference
+                            guard let selectedTemplate else { return }
+                            entry.template = selectedTemplate
+                        }
+                        
                         modelContext.saveLogged()
                         dismiss()
                     }
-                    .disabled(selectedTemplate == nil)
+                    .disabled(entry.isInline ? inlineMealName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty : selectedTemplate == nil)
                 }
             }
         }

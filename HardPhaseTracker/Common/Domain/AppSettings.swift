@@ -27,13 +27,12 @@ final class AppSettings {
     // Global
     var unitSystem: String? // "metric" | "imperial"
 
-    // Analysis (optional for migration safety)
-    var weeklyProteinGoalGrams: Double? // 0 == off
-
     // Health monitoring (optional for migration safety)
     var weightGoalKg: Double? // nil == not set
     var healthMonitoringStartDate: Date? // nil == use first app launch date
     var healthDataMaxPullDays: Int? // nil == use default (90 days)
+    var weightChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
+    var sleepChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
 
     init(
         selectedSchedule: EatingWindowSchedule? = nil,
@@ -47,10 +46,11 @@ final class AppSettings {
         electrolyteTemplates: [MealTemplate] = [],
         electrolyteSelectionMode: String = "fixed",
         unitSystem: String = "metric",
-        weeklyProteinGoalGrams: Double = 0,
         weightGoalKg: Double? = nil,
         healthMonitoringStartDate: Date? = nil,
-        healthDataMaxPullDays: Int? = nil
+        healthDataMaxPullDays: Int? = nil,
+        weightChartDaysRange: Int? = nil,
+        sleepChartDaysRange: Int? = nil
     ) {
         self.selectedSchedule = selectedSchedule
         self.alwaysShowLogMealButton = alwaysShowLogMealButton
@@ -63,9 +63,10 @@ final class AppSettings {
         self.electrolyteTemplates = electrolyteTemplates
         self.electrolyteSelectionMode = electrolyteSelectionMode
         self.unitSystem = unitSystem
-        self.weeklyProteinGoalGrams = weeklyProteinGoalGrams
         self.weightGoalKg = weightGoalKg
         self.healthMonitoringStartDate = healthMonitoringStartDate
         self.healthDataMaxPullDays = healthDataMaxPullDays
+        self.weightChartDaysRange = weightChartDaysRange
+        self.sleepChartDaysRange = sleepChartDaysRange
     }
 }

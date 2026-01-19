@@ -10,13 +10,19 @@ final class MealLogEntry {
     @Relationship
     var template: MealTemplate?
     var notes: String?
+    
+    // Inline meal flag (optional for migration safety)
+    // When true, this indicates the template is a one-time inline meal
+    // and should be hidden from the Meals tab
+    var isInline: Bool = false
 
     init(
         timestamp: Date = Date(),
         timeZoneIdentifier: String = TimeZone.current.identifier,
         utcOffsetSeconds: Int? = nil,
         template: MealTemplate?,
-        notes: String? = nil
+        notes: String? = nil,
+        isInline: Bool = false
     ) {
         self.timestamp = timestamp
         self.timeZoneIdentifier = timeZoneIdentifier
@@ -26,5 +32,6 @@ final class MealLogEntry {
 
         self.template = template
         self.notes = notes
+        self.isInline = isInline
     }
 }

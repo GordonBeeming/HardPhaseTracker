@@ -98,14 +98,34 @@ final class HealthKitViewModel: ObservableObject {
             async let w = service.fetchLatestWeight()
             async let bf = service.fetchLatestBodyFat()
             async let wAll = service.fetchWeightSamples(lastDays: maxDays, startDate: startDate)
+            async let bfAll = service.fetchBodyFatSamples(lastDays: maxDays, startDate: startDate)
             async let first = service.fetchFirstWeight(afterDate: startDate)
             async let sAll = service.fetchSleepNights(lastN: maxDays)
 
-            latestWeight = try await w
-            latestBodyFat = try await bf
-            allWeights = try await wAll
-            firstWeight = try await first
-            allSleepNights = try await sAll
+            let fetchedWeight = try await w
+            let fetchedBodyFat = try await bf
+            let fetchedWeights = try await wAll
+            let fetchedBodyFats = try await bfAll
+            let fetchedFirstWeight = try await first
+            let fetchedSleep = try await sAll
+            
+            // Only update if we got data, otherwise preserve cached data
+            // This prevents clearing data due to sync issues or permission problems
+            if fetchedWeight != nil || !fetchedWeights.isEmpty {
+                latestWeight = fetchedWeight
+                allWeights = fetchedWeights
+                firstWeight = fetchedFirstWeight
+            }
+            
+            if fetchedBodyFat != nil || !fetchedBodyFats.isEmpty {
+                latestBodyFat = fetchedBodyFat
+                allBodyFat = fetchedBodyFats
+            }
+            
+            if !fetchedSleep.isEmpty {
+                allSleepNights = fetchedSleep
+            }
+            
             saveCache()
             
             // Ensure minimum display time
@@ -135,22 +155,46 @@ final class HealthKitViewModel: ObservableObject {
             async let w = service.fetchLatestWeight()
             async let bf = service.fetchLatestBodyFat()
             async let newWeights = service.fetchWeightSamples(lastDays: maxDays, startDate: incrementalStartDate)
+            async let newBodyFats = service.fetchBodyFatSamples(lastDays: maxDays, startDate: incrementalStartDate)
             async let first = service.fetchFirstWeight(afterDate: startDate)
             async let sAll = service.fetchSleepNights(lastN: maxDays)
 
-            latestWeight = try await w
-            latestBodyFat = try await bf
-            
-            // Merge new weights with existing cached weights
+            let fetchedWeight = try await w
+            let fetchedBodyFat = try await bf
             let fetchedWeights = try await newWeights
-            let mergedWeights = mergeWeights(existing: allWeights, new: fetchedWeights)
+            let fetchedBodyFats = try await newBodyFats
+            let fetchedFirstWeight = try await first
+            let fetchedSleep = try await sAll
             
-            // Filter for all weights within maxDays
-            let cutoffMaxDays = Calendar.current.date(byAdding: .day, value: -maxDays, to: Date()) ?? Date()
-            allWeights = mergedWeights.filter { $0.date >= cutoffMaxDays }
+            // Only update if we got data, otherwise preserve cached data
+            if fetchedWeight != nil || !fetchedWeights.isEmpty {
+                latestWeight = fetchedWeight
+                
+                // Merge new weights with existing cached weights
+                let mergedWeights = mergeWeights(existing: allWeights, new: fetchedWeights)
+                
+                // Filter for all weights within maxDays
+                let cutoffMaxDays = Calendar.current.date(byAdding: .day, value: -maxDays, to: Date()) ?? Date()
+                allWeights = mergedWeights.filter { $0.date >= cutoffMaxDays }
+                
+                firstWeight = fetchedFirstWeight
+            }
             
-            firstWeight = try await first
-            allSleepNights = try await sAll
+            if fetchedBodyFat != nil || !fetchedBodyFats.isEmpty {
+                latestBodyFat = fetchedBodyFat
+                
+                // Merge new body fat samples with existing cached samples
+                let mergedBodyFats = mergeBodyFats(existing: allBodyFat, new: fetchedBodyFats)
+                
+                // Filter for all body fat samples within maxDays
+                let cutoffMaxDays = Calendar.current.date(byAdding: .day, value: -maxDays, to: Date()) ?? Date()
+                allBodyFat = mergedBodyFats.filter { $0.date >= cutoffMaxDays }
+            }
+            
+            if !fetchedSleep.isEmpty {
+                allSleepNights = fetchedSleep
+            }
+            
             saveCache()
             
             // Ensure minimum display time
@@ -190,6 +234,33 @@ final class HealthKitViewModel: ObservableObject {
         
         // Return sorted array
         return weightsByDay.values.sorted { $0.date < $1.date }
+    }
+    
+    private func mergeBodyFats(existing: [BodyFatSample], new: [BodyFatSample]) -> [BodyFatSample] {
+        // Create a dictionary of existing body fat samples by date (truncated to day)
+        var bodyFatsByDay: [Date: BodyFatSample] = [:]
+        
+        let calendar = Calendar.current
+        for bodyFat in existing {
+            let day = calendar.startOfDay(for: bodyFat.date)
+            bodyFatsByDay[day] = bodyFat
+        }
+        
+        // Add/update with new body fat samples
+        for bodyFat in new {
+            let day = calendar.startOfDay(for: bodyFat.date)
+            // Keep the newer sample if there are multiple on the same day
+            if let existingBodyFat = bodyFatsByDay[day] {
+                if bodyFat.date > existingBodyFat.date {
+                    bodyFatsByDay[day] = bodyFat
+                }
+            } else {
+                bodyFatsByDay[day] = bodyFat
+            }
+        }
+        
+        // Return sorted array
+        return bodyFatsByDay.values.sorted { $0.date < $1.date }
     }
 
     func refreshIfCacheStale(maxAgeHours: Double = 12, maxDays: Int = 90, startDate: Date? = nil) async {

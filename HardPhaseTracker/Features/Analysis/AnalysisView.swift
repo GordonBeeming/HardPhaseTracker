@@ -18,28 +18,63 @@ struct AnalysisView: View {
         )
     }
 
-    private var weeklyProteinGoalGrams: Double {
-        settings.first?.weeklyProteinGoalGrams ?? 0
+    private var appSettings: AppSettings? {
+        settings.first
     }
-
-    private var weeklyProteinSummaries: [WeeklyProteinSummary] {
-        WeeklyProteinAggregationService.summaries(entries: mealEntries, goalGrams: weeklyProteinGoalGrams)
+    
+    private var filteredWeights: [WeightSample] {
+        let daysRange = appSettings?.weightChartDaysRange ?? 14 // Default to 14 days
+        guard daysRange > 0 else {
+            return health.allWeights // All data if 0 or nil
+        }
+        
+        let cutoff = Calendar.current.date(byAdding: .day, value: -daysRange, to: Date()) ?? Date()
+        return health.allWeights.filter { $0.date >= cutoff }
     }
-
-    private var sleepCorrelationRows: [SleepFastingCorrelationRow] {
-        SleepFastingCorrelationService.rows(sleepNights: health.sleepLast7Nights, mealEntries: mealEntries)
+    
+    private var filteredSleepNights: [SleepNight] {
+        let daysRange = appSettings?.sleepChartDaysRange ?? 14 // Default to 14 days
+        guard daysRange > 0 else {
+            return health.allSleepNights // All data if 0 or nil
+        }
+        
+        let cutoff = Calendar.current.date(byAdding: .day, value: -daysRange, to: Date()) ?? Date()
+        return health.allSleepNights.filter { $0.date >= cutoff }
     }
     
     private var weeklyWeightChanges: [(weekStart: Date, change: Double)] {
-        WeightAnalysisService.weeklyChanges(weights: health.allWeights)
+        WeightAnalysisService.weeklyChanges(weights: filteredWeights)
     }
     
     private var averageWeightChangeByDayOfWeek: [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
-        WeightAnalysisService.averageChangeByDayOfWeek(weights: health.allWeights)
+        WeightAnalysisService.averageChangeByDayOfWeek(weights: filteredWeights)
     }
     
-    private var appSettings: AppSettings? {
-        settings.first
+    private var weightDelta: Double? {
+        guard let latest = health.latestWeight else { return nil }
+        
+        // Find the second most recent weight (previous weight before latest)
+        let previousWeight = health.allWeights
+            .filter { $0.date < latest.date }
+            .last // Get the most recent one before latest
+        
+        guard let previous = previousWeight else { return nil }
+        
+        return latest.kilograms - previous.kilograms
+    }
+    
+    private func formatWeightWithDelta(_ kilograms: Double, delta: Double?) -> String {
+        let weightStr = String(format: "%.1f kg", kilograms)
+        guard let delta = delta else { return weightStr }
+        
+        let sign = delta >= 0 ? "+" : ""
+        let deltaStr = String(format: "(%@%.1f)", sign, delta)
+        return "\(weightStr) \(deltaStr)"
+    }
+    
+    private func deltaColor(_ delta: Double?) -> Color {
+        guard let delta = delta else { return .primary }
+        return delta < 0 ? .green : .orange
     }
 
     var body: some View {
@@ -69,7 +104,10 @@ struct AnalysisView: View {
                             .foregroundStyle(.secondary)
 
                         if let w = health.latestWeight {
-                            LabeledContent("Latest weight", value: String(format: "%.1f kg", w.kilograms))
+                            LabeledContent("Latest weight") {
+                                Text(formatWeightWithDelta(w.kilograms, delta: weightDelta))
+                                    .foregroundStyle(deltaColor(weightDelta))
+                            }
                         } else {
                             LabeledContent("Latest weight", value: "—")
                         }
@@ -106,6 +144,44 @@ struct AnalysisView: View {
                 }
 
                 if (health.permission == .authorized || !health.allWeights.isEmpty) && !health.allWeights.isEmpty {
+                    Section {
+                        Picker("Weight chart range", selection: Binding(
+                            get: { appSettings?.weightChartDaysRange ?? 14 },
+                            set: { newValue in
+                                if let settings = appSettings {
+                                    settings.weightChartDaysRange = newValue == 0 ? nil : newValue
+                                }
+                            }
+                        )) {
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                            Text("60 days").tag(60)
+                            Text("90 days").tag(90)
+                            Text("All data").tag(0)
+                        }
+                        .pickerStyle(.menu)
+                        
+                        Picker("Sleep chart range", selection: Binding(
+                            get: { appSettings?.sleepChartDaysRange ?? 14 },
+                            set: { newValue in
+                                if let settings = appSettings {
+                                    settings.sleepChartDaysRange = newValue == 0 ? nil : newValue
+                                }
+                            }
+                        )) {
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                            Text("60 days").tag(60)
+                            Text("90 days").tag(90)
+                            Text("All data").tag(0)
+                        }
+                        .pickerStyle(.menu)
+                    } header: {
+                        Text("Chart Display Options")
+                    } footer: {
+                        Text("Choose how many days of data to display in the weight and sleep analysis charts. Default is 14 days.")
+                    }
+                    
                     Section("Weight Analysis") {
                         NavigationLink("Weight Change by Week") {
                             WeightByWeekView(weeklyChanges: weeklyWeightChanges)
@@ -114,53 +190,6 @@ struct AnalysisView: View {
                         NavigationLink("Weight Change by Day of Week") {
                             WeightByDayOfWeekView(dayData: averageWeightChangeByDayOfWeek)
                         }
-                    }
-                }
-
-                Section("Protein") {
-                    if weeklyProteinGoalGrams <= 0 {
-                        Text("Set a weekly protein goal in Settings (Dashboard → gear).")
-                            .foregroundStyle(.secondary)
-                    } else if let current = weeklyProteinSummaries.first {
-                        ProgressView(value: current.totalProteinGrams, total: max(1, current.goalProteinGrams)) {
-                            Text("This week")
-                        } currentValueLabel: {
-                            Text("\(Int(current.totalProteinGrams.rounded())) / \(Int(current.goalProteinGrams.rounded())) g")
-                        }
-                        .accessibilityLabel("Weekly protein progress")
-                    }
-
-                    if weeklyProteinSummaries.isEmpty {
-                        Text("No logged meals yet.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(weeklyProteinSummaries) { s in
-                            let total = Int(s.totalProteinGrams.rounded())
-                            let goal = Int(s.goalProteinGrams.rounded())
-                            LabeledContent(weekLabel(s), value: s.goalProteinGrams > 0 ? "\(total) / \(goal) g" : "\(total) g")
-                        }
-                    }
-                }
-
-                Section("Sleep ↔ Fasting") {
-                    if health.permission != .authorized {
-                        Text("Connect Apple Health to see sleep correlation.")
-                            .foregroundStyle(.secondary)
-                    } else if sleepCorrelationRows.isEmpty {
-                        Text("Insufficient sleep data.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(sleepCorrelationRows) { row in
-                            let fasting = row.fastingSecondsAtWake.map(formatHours) ?? "—"
-                            LabeledContent(
-                                row.date.formatted(date: .abbreviated, time: .omitted),
-                                value: "Fasting \(fasting) · Sleep \(formatHours(row.asleepSeconds))"
-                            )
-                        }
-
-                        Text("Fasting is estimated from the last logged meal to ~6am on the sleep day.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -191,12 +220,6 @@ struct AnalysisView: View {
             SettingsView()
         }
         .accessibilityIdentifier("tab.analysis")
-    }
-
-    private func weekLabel(_ summary: WeeklyProteinSummary) -> String {
-        let cal = Calendar(identifier: .iso8601)
-        let endInclusive = cal.date(byAdding: .day, value: -1, to: summary.weekEnd) ?? summary.weekEnd
-        return "\(summary.weekStart.formatted(date: .abbreviated, time: .omitted)) – \(endInclusive.formatted(date: .abbreviated, time: .omitted))"
     }
 
     private func formatHours(_ seconds: TimeInterval) -> String {
