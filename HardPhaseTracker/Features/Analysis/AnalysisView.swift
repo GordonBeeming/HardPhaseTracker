@@ -157,38 +157,6 @@ struct AnalysisView: View {
                         } else {
                             LabeledContent("Latest sleep", value: "—")
                         }
-
-                        if !health.weightsLast7Days.isEmpty {
-                            NavigationLink("Weight (last 7 days)") {
-                                WeightDetailView(
-                                    weights: health.allWeights,
-                                    selectedDaysRange: Binding(
-                                        get: { appSettings?.weightChartDaysRange ?? 14 },
-                                        set: { newValue in
-                                            if let settings = appSettings {
-                                                settings.weightChartDaysRange = newValue == 0 ? nil : newValue
-                                            }
-                                        }
-                                    )
-                                )
-                            }
-                        }
-
-                        if !health.sleepLast7Nights.isEmpty {
-                            NavigationLink("Sleep (last 7 nights)") {
-                                SleepDetailView(
-                                    sleepNights: health.allSleepNights,
-                                    selectedDaysRange: Binding(
-                                        get: { appSettings?.sleepChartDaysRange ?? 14 },
-                                        set: { newValue in
-                                            if let settings = appSettings {
-                                                settings.sleepChartDaysRange = newValue == 0 ? nil : newValue
-                                            }
-                                        }
-                                    )
-                                )
-                            }
-                        }
                     }
 
                     if let msg = health.errorMessage {
