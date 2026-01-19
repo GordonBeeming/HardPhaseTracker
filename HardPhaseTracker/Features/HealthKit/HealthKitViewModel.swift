@@ -35,6 +35,10 @@ final class HealthKitViewModel: ObservableObject {
         // Return the 7 most recent nights, already sorted descending by date
         return Array(allSleepNights.prefix(7))
     }
+    
+    var latestSleep: SleepNight? {
+        return allSleepNights.first // Already sorted descending by date
+    }
 
     private let service: HealthKitService
 

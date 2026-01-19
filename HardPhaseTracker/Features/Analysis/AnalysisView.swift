@@ -104,13 +104,27 @@ struct AnalysisView: View {
                             .foregroundStyle(.secondary)
 
                         if let w = health.latestWeight {
-                            LabeledContent("Latest weight") {
-                                HStack(spacing: 4) {
-                                    Text(String(format: "%.1f kg", w.kilograms))
-                                        .foregroundStyle(.primary)
-                                    if let delta = weightDelta {
-                                        Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
-                                            .foregroundStyle(delta < 0 ? .green : .orange)
+                            NavigationLink {
+                                WeightDetailView(
+                                    weights: health.allWeights,
+                                    selectedDaysRange: Binding(
+                                        get: { appSettings?.weightChartDaysRange ?? 14 },
+                                        set: { newValue in
+                                            if let settings = appSettings {
+                                                settings.weightChartDaysRange = newValue == 0 ? nil : newValue
+                                            }
+                                        }
+                                    )
+                                )
+                            } label: {
+                                LabeledContent("Latest weight") {
+                                    HStack(spacing: 4) {
+                                        Text(String(format: "%.1f kg", w.kilograms))
+                                            .foregroundStyle(.primary)
+                                        if let delta = weightDelta {
+                                            Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                                .foregroundStyle(delta < 0 ? .green : .orange)
+                                        }
                                     }
                                 }
                             }
@@ -122,6 +136,26 @@ struct AnalysisView: View {
                             LabeledContent("Latest body fat", value: String(format: "%.1f%%", bf.percent))
                         } else {
                             LabeledContent("Latest body fat", value: "—")
+                        }
+                        
+                        if let sleep = health.latestSleep {
+                            NavigationLink {
+                                SleepDetailView(
+                                    sleepNights: health.allSleepNights,
+                                    selectedDaysRange: Binding(
+                                        get: { appSettings?.sleepChartDaysRange ?? 14 },
+                                        set: { newValue in
+                                            if let settings = appSettings {
+                                                settings.sleepChartDaysRange = newValue == 0 ? nil : newValue
+                                            }
+                                        }
+                                    )
+                                )
+                            } label: {
+                                LabeledContent("Latest sleep", value: formatHours(sleep.asleepSeconds))
+                            }
+                        } else {
+                            LabeledContent("Latest sleep", value: "—")
                         }
 
                         if !health.weightsLast7Days.isEmpty {

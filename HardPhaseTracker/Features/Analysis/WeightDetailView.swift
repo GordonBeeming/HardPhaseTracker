@@ -25,11 +25,19 @@ struct WeightDetailView: View {
             }
             
             Section {
-                ForEach(filteredWeights.reversed()) { sample in
-                    LabeledContent(
-                        sample.date.formatted(date: .abbreviated, time: .omitted),
-                        value: String(format: "%.1f kg", sample.kilograms)
-                    )
+                ForEach(Array(filteredWeights.reversed().enumerated()), id: \.element.id) { index, sample in
+                    LabeledContent(sample.date.formatted(date: .abbreviated, time: .omitted)) {
+                        HStack(spacing: 4) {
+                            Text(String(format: "%.1f kg", sample.kilograms))
+                                .foregroundStyle(.primary)
+                            
+                            // Show delta from previous weight (next in reversed array)
+                            if let delta = calculateDelta(for: index, reversed: filteredWeights.reversed()) {
+                                Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                    .foregroundStyle(delta < 0 ? .green : .orange)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -38,5 +46,12 @@ struct WeightDetailView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background(colorScheme))
+    }
+    
+    private func calculateDelta(for index: Int, reversed: [WeightSample]) -> Double? {
+        guard index < reversed.count - 1 else { return nil }
+        let current = reversed[index]
+        let previous = reversed[index + 1]
+        return current.kilograms - previous.kilograms
     }
 }
