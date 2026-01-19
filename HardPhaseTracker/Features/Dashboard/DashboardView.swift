@@ -256,6 +256,12 @@ private struct DashboardWeightTrendCardView: View {
                             }
                         }
                     }
+                    .chartXAxis {
+                        AxisMarks(values: xAxisValues()) { value in
+                            AxisGridLine()
+                            AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                        }
+                    }
                     .chartYScale(domain: yBounds.min...yBounds.max)
                     .frame(height: 120)
 
@@ -320,6 +326,31 @@ private struct DashboardWeightTrendCardView: View {
         .accessibilityIdentifier("dashboard.weightTrend")
     }
 
+    private func xAxisValues() -> [Date] {
+        let weights = health.weightsLast14Days
+        guard !weights.isEmpty else { return [] }
+        
+        var dates: [Date] = []
+        
+        // First date (start of range)
+        if let first = weights.first {
+            dates.append(first.date)
+        }
+        
+        // Middle date (approximately 7 days ago from last weight)
+        if let last = weights.last {
+            let sevenDaysBeforeLast = Calendar.current.date(byAdding: .day, value: -7, to: last.date) ?? last.date
+            dates.append(sevenDaysBeforeLast)
+        }
+        
+        // Last date (most recent weight)
+        if let last = weights.last {
+            dates.append(last.date)
+        }
+        
+        return dates
+    }
+    
     private func calculateYAxisBounds() -> (min: Double, max: Double) {
         let weights = health.weightsLast14Days.map { displayValue(kilograms: $0.kilograms) }
         guard let dataMin = weights.min(), let dataMax = weights.max() else {
