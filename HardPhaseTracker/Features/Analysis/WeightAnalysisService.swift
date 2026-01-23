@@ -1,57 +1,76 @@
 import Foundation
 
 struct WeightAnalysisService {
+    /// Calculate the week start date for a given date based on custom week start day
+    /// - Parameters:
+    ///   - date: The date to find the week start for
+    ///   - weekStartDay: The day that should be considered the start of the week
+    /// - Returns: The date representing the start of the week (at 00:00:00)
+    private static func weekStart(for date: Date, startingOn weekStartDay: Weekday) -> Date {
+        let calendar = Calendar.current
+        let currentWeekday = calendar.component(.weekday, from: date)
+        let targetWeekday = weekStartDay.calendarWeekday
+        
+        // Calculate days to subtract to get to the week start
+        var daysBack: Int = currentWeekday - targetWeekday
+        if daysBack < 0 {
+            daysBack += 7
+        }
+        
+        // Get the start of the day, then go back the calculated days
+        let startOfDay = calendar.startOfDay(for: date)
+        return calendar.date(byAdding: .day, value: -daysBack, to: startOfDay) ?? startOfDay
+    }
+    
     /// Calculate weekly weight trend (absolute weight values by week)
-    static func weeklyWeightTrend(weights: [WeightSample]) -> [(weekStart: Date, weight: Double)] {
+    static func weeklyWeightTrend(weights: [WeightSample], weekStartDay: Weekday = .monday) -> [(weekStart: Date, weight: Double)] {
         guard !weights.isEmpty else { return [] }
         
         let sortedWeights = weights.sorted { $0.date < $1.date }
-        let calendar = Calendar.current
         
-        // Group weights by week
+        // Group weights by custom week
         var weeklyGroups: [Date: [WeightSample]] = [:]
         for weight in sortedWeights {
-            let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: weight.date)) ?? weight.date
-            weeklyGroups[weekStart, default: []].append(weight)
+            let weekStartDate = weekStart(for: weight.date, startingOn: weekStartDay)
+            weeklyGroups[weekStartDate, default: []].append(weight)
         }
         
         // Get average weight for each week
         var results: [(weekStart: Date, weight: Double)] = []
-        for (weekStart, weekWeights) in weeklyGroups.sorted(by: { $0.key < $1.key }) {
+        for (weekStartDate, weekWeights) in weeklyGroups.sorted(by: { $0.key < $1.key }) {
             let avgWeight = weekWeights.map { $0.kilograms }.reduce(0, +) / Double(weekWeights.count)
-            results.append((weekStart: weekStart, weight: avgWeight))
+            results.append((weekStart: weekStartDate, weight: avgWeight))
         }
         
         return results.suffix(12) // Last 12 weeks
     }
     
     /// Calculate weight change for each week
-    static func weeklyChanges(weights: [WeightSample]) -> [(weekStart: Date, change: Double)] {
+    static func weeklyChanges(weights: [WeightSample], weekStartDay: Weekday = .monday) -> [(weekStart: Date, change: Double)] {
         guard !weights.isEmpty else { return [] }
         
         let sortedWeights = weights.sorted { $0.date < $1.date }
-        let calendar = Calendar.current
         
-        // Group weights by week
+        // Group weights by custom week
         var weeklyGroups: [Date: [WeightSample]] = [:]
         for weight in sortedWeights {
-            let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: weight.date)) ?? weight.date
-            weeklyGroups[weekStart, default: []].append(weight)
+            let weekStartDate = weekStart(for: weight.date, startingOn: weekStartDay)
+            weeklyGroups[weekStartDate, default: []].append(weight)
         }
         
-        // Calculate change for each week
+        // Calculate change for each week (first weight to last weight in that week)
         var results: [(weekStart: Date, change: Double)] = []
-        for (weekStart, weekWeights) in weeklyGroups.sorted(by: { $0.key < $1.key }) {
+        for (weekStartDate, weekWeights) in weeklyGroups.sorted(by: { $0.key < $1.key }) {
             guard let first = weekWeights.first, let last = weekWeights.last else { continue }
             let change = last.kilograms - first.kilograms
-            results.append((weekStart: weekStart, change: change))
+            results.append((weekStart: weekStartDate, change: change))
         }
         
         return results.suffix(12) // Last 12 weeks
     }
     
     /// Calculate average weight change by day of week
-    static func averageChangeByDayOfWeek(weights: [WeightSample]) -> [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
+    static func averageChangeByDayOfWeek(weights: [WeightSample], weekStartDay: Weekday = .monday) -> [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
         guard weights.count >= 2 else { return [] }
         
         let sortedWeights = weights.sorted { $0.date < $1.date }
@@ -69,23 +88,34 @@ struct WeightAnalysisService {
             changesByDay[dayOfWeek, default: []].append(change)
         }
         
-        // Calculate averages
+        // Calculate averages for all days
         let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-        var results: [(dayOfWeek: Int, dayName: String, avgChange: Double)] = []
+        var allDays: [(dayOfWeek: Int, dayName: String, avgChange: Double)] = []
         
         for dayOfWeek in 1...7 {
             if let changes = changesByDay[dayOfWeek], !changes.isEmpty {
                 let avg = changes.reduce(0, +) / Double(changes.count)
                 let dayName = dayNames[dayOfWeek - 1]
-                results.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: avg))
+                allDays.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: avg))
             } else {
                 // Include days with no data as 0
                 let dayName = dayNames[dayOfWeek - 1]
-                results.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: 0))
+                allDays.append((dayOfWeek: dayOfWeek, dayName: dayName, avgChange: 0))
             }
         }
         
-        return results.sorted { $0.dayOfWeek < $1.dayOfWeek }
+        // Reorder to start from the configured week start day
+        let startDayWeekday = weekStartDay.calendarWeekday
+        var reordered: [(dayOfWeek: Int, dayName: String, avgChange: Double)] = []
+        
+        for offset in 0..<7 {
+            let targetWeekday = ((startDayWeekday - 1 + offset) % 7) + 1
+            if let day = allDays.first(where: { $0.dayOfWeek == targetWeekday }) {
+                reordered.append(day)
+            }
+        }
+        
+        return reordered
     }
     
     /// Calculate daily weight change patterns (which specific days show most change)

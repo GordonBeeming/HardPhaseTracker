@@ -57,6 +57,7 @@ struct SettingsView: View {
     @State private var weightGoalDisplay: Double = 0 // Display value in user's unit
     @State private var healthMonitoringStartDate: Date = Date()
     @State private var healthDataMaxPullDays: Int = 90
+    @State private var weekStartDay: Weekday = .monday
     
     // Data export/import
     @State private var showingExportShare = false
@@ -132,6 +133,7 @@ struct SettingsView: View {
 
             healthMonitoringStartDate = current.healthMonitoringStartDate ?? Date()
             healthDataMaxPullDays = current.healthDataMaxPullDays ?? 90
+            weekStartDay = current.weekStartDayEnum
 
             electrolyteServingsPerDay = ElectrolyteTargetService.servingsPerDay(for: Date(), targets: electrolyteTargets)
             electrolyteAskEachTime = (current.electrolyteSelectionMode ?? "fixed") == "askEachTime"
@@ -168,6 +170,7 @@ struct SettingsView: View {
         .onChange(of: weightGoalDisplay) { _, _ in save() }
         .onChange(of: healthMonitoringStartDate) { _, _ in save() }
         .onChange(of: healthDataMaxPullDays) { _, _ in save() }
+        .onChange(of: weekStartDay) { _, _ in save() }
     }
 
     private var currentTab: SectionTab {
@@ -305,6 +308,16 @@ struct SettingsView: View {
                     }
                     
                     Text("Limits how far back to query HealthKit for performance")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("Week start day", selection: $weekStartDay) {
+                        ForEach(Weekday.allCases, id: \.self) { day in
+                            Text(day.displayName).tag(day)
+                        }
+                    }
+                    
+                    Text("If doing multi-day fasts, set this to the day you eat to best show the grouping of data for the week")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -540,6 +553,7 @@ struct SettingsView: View {
         current.weightGoalKg = weightGoalKg > 0 ? weightGoalKg : nil
         current.healthMonitoringStartDate = healthMonitoringStartDate
         current.healthDataMaxPullDays = healthDataMaxPullDays
+        current.weekStartDay = weekStartDay.rawValue
 
         modelContext.saveLogged()
     }

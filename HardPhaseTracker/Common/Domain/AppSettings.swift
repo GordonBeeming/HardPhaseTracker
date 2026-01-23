@@ -33,6 +33,7 @@ final class AppSettings {
     var healthDataMaxPullDays: Int? // nil == use default (90 days)
     var weightChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
     var sleepChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
+    var weekStartDay: String? // nil == default to monday ("sunday" | "monday" | etc.)
 
     init(
         selectedSchedule: EatingWindowSchedule? = nil,
@@ -50,7 +51,8 @@ final class AppSettings {
         healthMonitoringStartDate: Date? = nil,
         healthDataMaxPullDays: Int? = nil,
         weightChartDaysRange: Int? = nil,
-        sleepChartDaysRange: Int? = nil
+        sleepChartDaysRange: Int? = nil,
+        weekStartDay: String? = nil
     ) {
         self.selectedSchedule = selectedSchedule
         self.alwaysShowLogMealButton = alwaysShowLogMealButton
@@ -68,5 +70,15 @@ final class AppSettings {
         self.healthDataMaxPullDays = healthDataMaxPullDays
         self.weightChartDaysRange = weightChartDaysRange
         self.sleepChartDaysRange = sleepChartDaysRange
+        self.weekStartDay = weekStartDay
+    }
+}
+
+// MARK: - Computed Properties
+extension AppSettings {
+    /// Returns the week start day as a Weekday enum, defaulting to Monday
+    var weekStartDayEnum: Weekday {
+        guard let weekStartDay = weekStartDay else { return .monday }
+        return Weekday(rawValue: weekStartDay) ?? .monday
     }
 }

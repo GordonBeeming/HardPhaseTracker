@@ -95,6 +95,7 @@ final class DataExportImportService {
         let healthDataMaxPullDays: Int?
         let weightChartDaysRange: Int?
         let sleepChartDaysRange: Int?
+        let weekStartDay: String?
     }
     
     // MARK: - Export
@@ -214,7 +215,8 @@ final class DataExportImportService {
                 healthMonitoringStartDate: settings.healthMonitoringStartDate,
                 healthDataMaxPullDays: settings.healthDataMaxPullDays,
                 weightChartDaysRange: settings.weightChartDaysRange,
-                sleepChartDaysRange: settings.sleepChartDaysRange
+                sleepChartDaysRange: settings.sleepChartDaysRange,
+                weekStartDay: settings.weekStartDay
             )
         }
         
@@ -448,6 +450,7 @@ final class DataExportImportService {
             settings.healthDataMaxPullDays = exportSettings.healthDataMaxPullDays
             settings.weightChartDaysRange = exportSettings.weightChartDaysRange
             settings.sleepChartDaysRange = exportSettings.sleepChartDaysRange
+            settings.weekStartDay = exportSettings.weekStartDay
             
             // Link electrolyte templates
             let electrolyteTemplates = exportSettings.electrolyteTemplateIds.compactMap { templateMap[$0] }

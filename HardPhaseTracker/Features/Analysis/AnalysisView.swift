@@ -43,11 +43,13 @@ struct AnalysisView: View {
     }
     
     private var weeklyWeightChanges: [(weekStart: Date, change: Double)] {
-        WeightAnalysisService.weeklyChanges(weights: filteredWeights)
+        let startDay = appSettings?.weekStartDayEnum ?? .monday
+        return WeightAnalysisService.weeklyChanges(weights: filteredWeights, weekStartDay: startDay)
     }
     
     private var averageWeightChangeByDayOfWeek: [(dayOfWeek: Int, dayName: String, avgChange: Double)] {
-        WeightAnalysisService.averageChangeByDayOfWeek(weights: filteredWeights)
+        let startDay = appSettings?.weekStartDayEnum ?? .monday
+        return WeightAnalysisService.averageChangeByDayOfWeek(weights: filteredWeights, weekStartDay: startDay)
     }
     
     private var weightDelta: Double? {
@@ -168,7 +170,11 @@ struct AnalysisView: View {
                 if (health.permission == .authorized || !health.allWeights.isEmpty) && !health.allWeights.isEmpty {
                     Section("Weight Analysis") {
                         NavigationLink("Weight Change by Week") {
-                            WeightByWeekView(weeklyChanges: weeklyWeightChanges)
+                            WeightByWeekView(
+                                weeklyChanges: weeklyWeightChanges,
+                                allWeights: filteredWeights,
+                                weekStartDay: appSettings?.weekStartDayEnum ?? .monday
+                            )
                         }
                         
                         NavigationLink("Weight Change by Day of Week") {
