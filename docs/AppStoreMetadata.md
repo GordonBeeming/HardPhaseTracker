@@ -33,7 +33,7 @@ All your data is stored locally on your device. We don't collect, share, or sell
 Perfect for anyone practicing intermittent fasting, time-restricted eating, or working towards metabolic health goals.
 
 ### Keywords
-fasting, intermittent fasting, OMAD, eating window, weight tracking, health, fitness, meal logging, metabolic health, time restricted eating
+fasting,intermittent,OMAD,eating window,weight,health,meal logging,autophagy,16:8,IF tracker
 
 ### Primary Category
 Health & Fitness

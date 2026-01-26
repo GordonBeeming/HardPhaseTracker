@@ -10,6 +10,8 @@ struct DashboardView: View {
     private var mealLogs: [MealLogEntry]
 
     @Query private var settings: [AppSettings]
+    
+    @Query private var allOverrides: [EatingWindowOverride]
 
     @State private var isLoggingMeal = false
     @State private var isPickingSchedule = false
@@ -21,12 +23,18 @@ struct DashboardView: View {
     private var selectedSchedule: EatingWindowSchedule? { settings.first?.selectedSchedule }
 
     private var appSettings: AppSettings? { settings.first }
+    
+    private var todayOverride: EatingWindowOverride? {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return allOverrides.first { cal.isDate($0.date, inSameDayAs: today) }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    if shouldShowPrimaryLogMeal {
+                    if shouldShowPrimaryLogMeal(at: Date(), override: todayOverride) {
                         Button("Log Meal") {
                             isLoggingMeal = true
                         }
@@ -56,7 +64,8 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     } else if let selectedSchedule {
                         TimelineView(.periodic(from: .now, by: 60)) { context in
-                            let inWindow = EatingWindowEvaluator.isNowInWindow(schedule: selectedSchedule, now: context.date)
+                            let inWindow = EatingWindowEvaluator.isNowInWindow(schedule: selectedSchedule, now: context.date, override: todayOverride)
+                            let showPrimary = shouldShowPrimaryLogMeal(at: context.date, override: todayOverride)
 
                             VStack(spacing: 12) {
                                 ElectrolyteChecklistView(date: context.date, settings: appSettings)
@@ -64,9 +73,9 @@ struct DashboardView: View {
 
                                 if inWindow {
                                     VStack(spacing: 10) {
-                                        EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
+                                        EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal, override: todayOverride)
 
-                                        if !shouldShowPrimaryLogMeal {
+                                        if !showPrimary {
                                             Button("Log meal") {
                                                 isLoggingMeal = true
                                             }
@@ -84,9 +93,9 @@ struct DashboardView: View {
                                         Label("Outside eating window", systemImage: "exclamationmark.triangle.fill")
                                             .foregroundStyle(.orange)
 
-                                        EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal)
+                                        EatingWindowStatusView(schedule: selectedSchedule, lastMeal: lastMeal, override: todayOverride)
 
-                                        if !shouldShowPrimaryLogMeal {
+                                        if !showPrimary {
                                             Button("Log meal anyway") {
                                                 isLoggingMeal = true
                                             }
@@ -166,12 +175,15 @@ struct DashboardView: View {
         .accessibilityIdentifier("tab.dashboard")
     }
 
-    private var shouldShowPrimaryLogMeal: Bool {
+    private func shouldShowPrimaryLogMeal(at date: Date, override: EatingWindowOverride?) -> Bool {
         LogMealVisibilityPolicy.shouldShowPrimary(
             alwaysShow: appSettings?.alwaysShowLogMealButton ?? false,
             showBeforeHours: appSettings?.logMealShowBeforeHours ?? 0.5,
             showAfterHours: appSettings?.logMealShowAfterHours ?? 2.5,
-            schedule: selectedSchedule
+            schedule: selectedSchedule,
+            override: override,
+            overrides: allOverrides,
+            now: date
         )
     }
 }

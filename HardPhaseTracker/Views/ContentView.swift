@@ -63,6 +63,9 @@ struct ContentView: View {
         .task {
             SeedSchedulesService.seedIfNeeded(modelContext: modelContext)
             
+            // Clean up old overrides (past dates)
+            EatingWindowOverrideService.clearOldOverrides(modelContext: modelContext)
+            
             // Request CloudKit sync on app launch (if online and stale)
             cloudKitSync.requestSyncIfStale(modelContext: modelContext)
         }

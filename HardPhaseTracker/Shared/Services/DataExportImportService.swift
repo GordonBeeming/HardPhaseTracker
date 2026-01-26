@@ -21,6 +21,7 @@ final class DataExportImportService {
         let electrolyteIntakeEntries: [ExportElectrolyteIntakeEntry]
         let electrolyteTargetSettings: [ExportElectrolyteTargetSetting]
         let eatingWindowSchedules: [ExportEatingWindowSchedule]
+        let eatingWindowOverrides: [ExportEatingWindowOverride]
         let appSettings: ExportAppSettings?
         
         // Optional health data for testing purposes (not synced to HealthKit on import)
@@ -78,6 +79,15 @@ final class DataExportImportService {
         let isBuiltIn: Bool
     }
     
+    struct ExportEatingWindowOverride: Codable, Identifiable {
+        let id: String
+        let date: Date
+        let overrideType: String
+        let startMinutes: Int?
+        let endMinutes: Int?
+        let scheduleId: String?
+    }
+    
     struct ExportAppSettings: Codable {
         let selectedScheduleId: String?
         let alwaysShowLogMealButton: Bool
@@ -114,6 +124,7 @@ final class DataExportImportService {
         let electrolyteIntakeEntries = try modelContext.fetch(FetchDescriptor<ElectrolyteIntakeEntry>())
         let electrolyteTargetSettings = try modelContext.fetch(FetchDescriptor<ElectrolyteTargetSetting>())
         let eatingWindowSchedules = try modelContext.fetch(FetchDescriptor<EatingWindowSchedule>())
+        let eatingWindowOverrides = try modelContext.fetch(FetchDescriptor<EatingWindowOverride>())
         let appSettings = try modelContext.fetch(FetchDescriptor<AppSettings>()).first
         
         // Create ID mapping for relationships
@@ -193,6 +204,18 @@ final class DataExportImportService {
             )
         }
         
+        // Export eating window overrides
+        let exportedOverrides = eatingWindowOverrides.map { override -> ExportEatingWindowOverride in
+            ExportEatingWindowOverride(
+                id: UUID().uuidString,
+                date: override.date,
+                overrideType: override.overrideType,
+                startMinutes: override.startMinutes,
+                endMinutes: override.endMinutes,
+                scheduleId: override.schedule.flatMap { scheduleIdMap[$0.persistentModelID] }
+            )
+        }
+        
         // Export app settings
         let exportedSettings: ExportAppSettings? = appSettings.map { settings in
             let electrolyteTemplateIds = (settings.electrolyteTemplates ?? []).compactMap { template in
@@ -240,6 +263,7 @@ final class DataExportImportService {
             electrolyteIntakeEntries: exportedElectrolyteIntakes,
             electrolyteTargetSettings: exportedElectrolyteTargets,
             eatingWindowSchedules: exportedSchedules,
+            eatingWindowOverrides: exportedOverrides,
             appSettings: exportedSettings,
             weightSamples: weightSamples,
             bodyFatSamples: bodyFatSamples,
@@ -284,6 +308,7 @@ final class DataExportImportService {
         let electrolyteIntakesImported: Int
         let electrolyteTargetsImported: Int
         let schedulesImported: Int
+        let overridesImported: Int
         let settingsImported: Bool
         let healthDataImported: Bool
         let weightsImported: Int
@@ -299,6 +324,7 @@ final class DataExportImportService {
             • \(electrolyteIntakesImported) electrolyte intakes
             • \(electrolyteTargetsImported) electrolyte targets
             • \(schedulesImported) eating window schedules
+            • \(overridesImported) eating window overrides
             • Settings: \(settingsImported ? "imported" : "not imported")
             """
             
@@ -460,6 +486,31 @@ final class DataExportImportService {
             settingsImported = true
         }
         
+        // Import eating window overrides (depends on schedules, only future dates)
+        let today = Calendar.current.startOfDay(for: Date())
+        var overridesImported = 0
+        for exportOverride in exportData.eatingWindowOverrides {
+            // Only import future overrides (today and forward)
+            guard exportOverride.date >= today else {
+                logger.debug("Skipping past override: \(exportOverride.date)")
+                continue
+            }
+            
+            let schedule = exportOverride.scheduleId.flatMap { scheduleMap[$0] }
+            let overrideType = OverrideType(rawValue: exportOverride.overrideType) ?? .eating
+            
+            let override = EatingWindowOverride(
+                date: exportOverride.date,
+                overrideType: overrideType,
+                schedule: schedule,
+                startMinutes: exportOverride.startMinutes,
+                endMinutes: exportOverride.endMinutes
+            )
+            modelContext.insert(override)
+            overridesImported += 1
+        }
+        logger.info("Imported \(overridesImported) eating window overrides (skipped past dates)")
+        
         // Import health data if available and HealthKitViewModel is provided
         var healthDataImported = false
         var weightsImported = 0
@@ -491,6 +542,7 @@ final class DataExportImportService {
             electrolyteIntakesImported: exportData.electrolyteIntakeEntries.count,
             electrolyteTargetsImported: exportData.electrolyteTargetSettings.count,
             schedulesImported: exportData.eatingWindowSchedules.count,
+            overridesImported: overridesImported,
             settingsImported: settingsImported,
             healthDataImported: healthDataImported,
             weightsImported: weightsImported,

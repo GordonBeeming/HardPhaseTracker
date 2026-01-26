@@ -34,6 +34,11 @@ final class AppSettings {
     var weightChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
     var sleepChartDaysRange: Int? // nil == all data, or 14, 30, 60, 90
     var weekStartDay: String? // nil == default to monday ("sunday" | "monday" | etc.)
+    
+    // Notifications (optional for migration safety)
+    var notificationsEnabled: Bool = false
+    var notifyBeforeWindowStartMinutes: Int = 15
+    var notifyBeforeWindowEndMinutes: Int = 30
 
     init(
         selectedSchedule: EatingWindowSchedule? = nil,
@@ -52,7 +57,10 @@ final class AppSettings {
         healthDataMaxPullDays: Int? = nil,
         weightChartDaysRange: Int? = nil,
         sleepChartDaysRange: Int? = nil,
-        weekStartDay: String? = nil
+        weekStartDay: String? = nil,
+        notificationsEnabled: Bool = false,
+        notifyBeforeWindowStartMinutes: Int = 15,
+        notifyBeforeWindowEndMinutes: Int = 30
     ) {
         self.selectedSchedule = selectedSchedule
         self.alwaysShowLogMealButton = alwaysShowLogMealButton
@@ -71,6 +79,9 @@ final class AppSettings {
         self.weightChartDaysRange = weightChartDaysRange
         self.sleepChartDaysRange = sleepChartDaysRange
         self.weekStartDay = weekStartDay
+        self.notificationsEnabled = notificationsEnabled
+        self.notifyBeforeWindowStartMinutes = notifyBeforeWindowStartMinutes
+        self.notifyBeforeWindowEndMinutes = notifyBeforeWindowEndMinutes
     }
 }
 

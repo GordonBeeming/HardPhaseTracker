@@ -22,6 +22,7 @@ struct HardPhaseTrackerApp: App {
             ElectrolyteIntakeEntry.self,
             ElectrolyteTargetSetting.self,
             EatingWindowSchedule.self,
+            EatingWindowOverride.self,
             AppSettings.self,
         ])
 
@@ -62,6 +63,7 @@ struct HardPhaseTrackerApp: App {
             ElectrolyteIntakeEntry.self,
             ElectrolyteTargetSetting.self,
             EatingWindowSchedule.self,
+            EatingWindowOverride.self,
             AppSettings.self,
         ])
 

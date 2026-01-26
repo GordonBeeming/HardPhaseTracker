@@ -11,6 +11,9 @@ final class EatingWindowSchedule {
 
     @Relationship
     var selectedBySettings: [AppSettings]? = []
+    
+    @Relationship
+    var overrides: [EatingWindowOverride]? = []
 
     init(name: String, startMinutes: Int, endMinutes: Int, weekdayMask: Int, isBuiltIn: Bool = false) {
         self.name = name

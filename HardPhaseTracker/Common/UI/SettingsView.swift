@@ -16,6 +16,7 @@ struct SettingsView: View {
         case dashboard = "Dashboard"
         case meals = "Meals"
         case electrolytes = "Electrolytes"
+        case notifications = "Notifications"
         case health = "Health"
         case data = "Data"
 
@@ -26,6 +27,7 @@ struct SettingsView: View {
             case .dashboard: "rectangle.3.group"
             case .meals: "fork.knife"
             case .electrolytes: "drop"
+            case .notifications: "bell"
             case .health: "heart"
             case .data: "arrow.down.doc"
             }
@@ -179,9 +181,20 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func settingsDetail(tab: SectionTab) -> some View {
-        Form {
-            switch tab {
-            case .dashboard:
+        Group {
+            if tab == .notifications {
+                // NotificationSettingsView has its own Form, so don't wrap it
+                if let currentSettings = settings.first {
+                    NotificationSettingsView(settings: currentSettings)
+                } else {
+                    Form {
+                        Text("Loading settings...")
+                    }
+                }
+            } else {
+                Form {
+                    switch tab {
+                    case .dashboard:
                 Section("Eating window") {
                     Button("Change eating window") {
                         isPickingSchedule = true
@@ -272,6 +285,10 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+            case .notifications:
+                // Never reached - handled in if statement above
+                EmptyView()
+                
             case .health:
                 Section("Weight goal") {
                     HStack {
@@ -478,6 +495,8 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            }
+        }
         }
         .navigationTitle(tab.rawValue)
         .safeAreaInset(edge: .bottom) {

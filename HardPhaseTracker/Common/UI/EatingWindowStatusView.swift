@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct EatingWindowStatusView: View {
     let schedule: EatingWindowSchedule
     let lastMeal: MealLogEntry?
+    let override: EatingWindowOverride?
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var now: Date = .now
@@ -13,13 +15,51 @@ struct EatingWindowStatusView: View {
             let now = context.date
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(schedule.name)
-                    .font(.headline)
+                HStack {
+                    Text(schedule.name)
+                        .font(.headline)
+                    
+                    // Only show badge if it's a skip OR if times are customized
+                    if let override = override {
+                        let hasCustomTimes = override.startMinutes != nil || override.endMinutes != nil
+                        
+                        if override.overrideTypeEnum == .skip {
+                            // Show "Skipped" badge
+                            HStack(spacing: 4) {
+                                Image(systemName: "xmark.circle.fill")
+                                Text("Skipped")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(Color.red)
+                            )
+                        } else if hasCustomTimes {
+                            // Show "Custom" badge only if times are different
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                Text("Custom")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(Color.orange)
+                            )
+                        }
+                        // If override is eating with default times, show no badge (looks normal)
+                    }
+                }
 
-                Text(EatingWindowEvaluator.windowText(schedule: schedule))
+                Text(EatingWindowEvaluator.windowText(schedule: schedule, override: override))
                     .foregroundStyle(.secondary)
 
-                if let current = EatingWindowNavigator.currentWindowRange(schedule: schedule, now: now) {
+                if let current = EatingWindowNavigator.currentWindowRange(schedule: schedule, now: now, override: override) {
                     let total = current.end.timeIntervalSince(current.start)
                     let elapsed = now.timeIntervalSince(current.start)
                     let progress = total > 0 ? max(0, min(1, elapsed / total)) : 0
