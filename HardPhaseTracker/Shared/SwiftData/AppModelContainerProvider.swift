@@ -15,6 +15,10 @@ enum AppModelContainerProvider {
             let localStoreURL = appSupport.appendingPathComponent("default.store")
 
             // 1) Prefer CloudKit (private database)
+            // Note: CloudKit is not reliably available in iOS Simulator
+            #if targetEnvironment(simulator)
+            logger.info("Running in simulator - skipping CloudKit, using local storage")
+            #else
             do {
                 logger.info("Attempting to create CloudKit container with ID: \(iCloudContainerId)")
                 let cloud = ModelConfiguration(
@@ -34,6 +38,7 @@ enum AppModelContainerProvider {
                     logger.error("   User info: \(nsError.userInfo)")
                 }
             }
+            #endif
 
             // 2) Fallback to local store
             do {
