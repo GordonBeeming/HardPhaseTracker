@@ -16,14 +16,23 @@ enum AppModelContainerProvider {
 
             // 1) Prefer CloudKit (private database)
             do {
+                logger.info("Attempting to create CloudKit container with ID: \(iCloudContainerId)")
                 let cloud = ModelConfiguration(
                     schema: schema,
                     url: cloudStoreURL,
                     cloudKitDatabase: .private(iCloudContainerId)
                 )
-                return .success(try ModelContainer(for: schema, configurations: [cloud]))
+                let container = try ModelContainer(for: schema, configurations: [cloud])
+                logger.info("✅ CloudKit container created successfully")
+                return .success(container)
             } catch {
-                logger.error("CloudKit SwiftData store failed; falling back to local-only store: \(error.localizedDescription)")
+                logger.error("❌ CloudKit SwiftData store failed; falling back to local-only store")
+                logger.error("   Error: \(error.localizedDescription)")
+                logger.error("   Error type: \(String(describing: type(of: error)))")
+                if let nsError = error as NSError? {
+                    logger.error("   Domain: \(nsError.domain), Code: \(nsError.code)")
+                    logger.error("   User info: \(nsError.userInfo)")
+                }
             }
 
             // 2) Fallback to local store
