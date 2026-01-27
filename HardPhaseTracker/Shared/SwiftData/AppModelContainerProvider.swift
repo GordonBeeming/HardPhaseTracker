@@ -1,9 +1,38 @@
 import Foundation
 import OSLog
 import SwiftData
+import CloudKit
 
 enum AppModelContainerProvider {
     private static let logger = Logger(subsystem: "HardPhaseTracker", category: "SwiftData")
+    
+    /// Initialize the CloudKit zone if it doesn't exist
+    /// This is called asynchronously to avoid blocking app startup
+    private static func initializeCloudKitZone(containerId: String) {
+        Task {
+            do {
+                let container = CKContainer(identifier: containerId)
+                let database = container.privateCloudDatabase
+                
+                // Create the default zone used by SwiftData/CoreData
+                let zoneID = CKRecordZone.ID(zoneName: "com.apple.coredata.cloudkit.zone", ownerName: CKCurrentUserDefaultName)
+                let zone = CKRecordZone(zoneID: zoneID)
+                
+                logger.info("Creating CloudKit zone: \(zoneID.zoneName)")
+                let _ = try await database.save(zone)
+                logger.info("✅ CloudKit zone created successfully")
+            } catch let error as CKError {
+                // Zone already exists is not an error
+                if error.code == .zoneNotFound || error.code == .partialFailure {
+                    logger.info("CloudKit zone creation failed (expected if zone exists): \(error.localizedDescription)")
+                } else {
+                    logger.error("❌ Failed to create CloudKit zone: \(error.localizedDescription)")
+                }
+            } catch {
+                logger.error("❌ Unexpected error creating CloudKit zone: \(error.localizedDescription)")
+            }
+        }
+    }
 
     static func make(schema: Schema, iCloudContainerId: String) -> Result<ModelContainer, Error> {
         do {
@@ -21,6 +50,10 @@ enum AppModelContainerProvider {
             #else
             do {
                 logger.info("Attempting to create CloudKit container with ID: \(iCloudContainerId)")
+                
+                // Initialize CloudKit zone if needed
+                initializeCloudKitZone(containerId: iCloudContainerId)
+                
                 let cloud = ModelConfiguration(
                     schema: schema,
                     url: cloudStoreURL,
