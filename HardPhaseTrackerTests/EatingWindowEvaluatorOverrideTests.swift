@@ -15,7 +15,7 @@ final class EatingWindowEvaluatorOverrideTests: XCTestCase {
             name: "Test 16/8",
             startMinutes: 720,  // 12:00 PM
             endMinutes: 1200,   // 8:00 PM
-            weekdayMask: 62,    // Mon-Fri (bits 2-6)
+            weekdayMask: 124,   // Mon-Fri (weekdays 2-6: 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 = 124)
             isBuiltIn: false
         )
     }
