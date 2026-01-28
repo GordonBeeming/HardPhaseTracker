@@ -215,13 +215,36 @@ final class HealthKitViewModel: ObservableObject {
     
     private func mergeWeights(existing: [WeightSample], new: [WeightSample]) -> [WeightSample] {
         // Create a dictionary of existing weights by date (truncated to day)
-        var weightsByDay: [Date: WeightSample] = [:]
+        var weightsByDay: [Date: WeightSample] = []
         
         let calendar = Calendar.current
+        logger.info("Merging weights: \(existing.count) existing + \(new.count) new")
+        
         for weight in existing {
             let day = calendar.startOfDay(for: weight.date)
             weightsByDay[day] = weight
         }
+        
+        // Add/update with new weights
+        for weight in new {
+            let day = calendar.startOfDay(for: weight.date)
+            // Keep the newer weight if there are multiple on the same day
+            if let existingWeight = weightsByDay[day] {
+                if weight.date > existingWeight.date {
+                    logger.info("Replacing weight for \(day.formatted(date: .abbreviated, time: .omitted)): \(existingWeight.kilograms) kg with \(weight.kilograms) kg")
+                    weightsByDay[day] = weight
+                }
+            } else {
+                logger.info("Adding new weight for \(day.formatted(date: .abbreviated, time: .omitted)): \(weight.kilograms) kg")
+                weightsByDay[day] = weight
+            }
+        }
+        
+        logger.info("Merged result: \(weightsByDay.count) unique days")
+        
+        // Return sorted array
+        return weightsByDay.values.sorted { $0.date < $1.date }
+    }
         
         // Add/update with new weights
         for weight in new {
