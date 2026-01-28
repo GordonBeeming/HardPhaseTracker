@@ -349,6 +349,11 @@ final class HealthKitViewModel: ObservableObject {
         
         // Notify other HealthKitViewModel instances to reload from cache
         NotificationCenter.default.post(name: Self.healthDataImportedNotification, object: nil)
+        
+        // Refresh from Apple Health to get any new data since the export was created
+        Task {
+            await incrementalRefresh(maxDays: 90, startDate: nil)
+        }
     }
 
     private func refreshPermission() async {
