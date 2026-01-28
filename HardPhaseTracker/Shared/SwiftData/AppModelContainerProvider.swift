@@ -40,8 +40,14 @@ enum AppModelContainerProvider {
             try FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
 
             // Keep CloudKit and local stores separate so a CloudKit toggle/issue doesn't break the local store.
+            // Also use separate stores for Debug (Development) vs Release (Production) to prevent CloudKit conflicts
+            #if DEBUG
+            let cloudStoreURL = appSupport.appendingPathComponent("cloud-dev.store")
+            let localStoreURL = appSupport.appendingPathComponent("default-dev.store")
+            #else
             let cloudStoreURL = appSupport.appendingPathComponent("cloud.store")
             let localStoreURL = appSupport.appendingPathComponent("default.store")
+            #endif
 
             // 1) Prefer CloudKit (private database)
             // Note: CloudKit is not reliably available in iOS Simulator
