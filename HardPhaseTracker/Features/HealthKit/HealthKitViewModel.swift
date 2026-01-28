@@ -353,28 +353,39 @@ final class HealthKitViewModel: ObservableObject {
         bodyFat: [BodyFatSample]?,
         sleepNights: [SleepNight]?
     ) {
+        logger.info("Restoring health data from backup")
+        
         if let weights = weights {
-            allWeights = weights
-            firstWeight = weights.first
-            latestWeight = weights.last
+            logger.info("Restoring \(weights.count) weight samples")
+            // Don't just replace - merge with any existing data first
+            let merged = mergeWeights(existing: allWeights, new: weights)
+            allWeights = merged
+            firstWeight = allWeights.first
+            latestWeight = allWeights.last
         }
         
         if let bodyFat = bodyFat {
-            allBodyFat = bodyFat
-            latestBodyFat = bodyFat.last
+            logger.info("Restoring \(bodyFat.count) body fat samples")
+            // Don't just replace - merge with any existing data first
+            let merged = mergeBodyFats(existing: allBodyFat, new: bodyFat)
+            allBodyFat = merged
+            latestBodyFat = allBodyFat.last
         }
         
         if let sleepNights = sleepNights {
+            logger.info("Restoring \(sleepNights.count) sleep nights")
             allSleepNights = sleepNights
         }
         
-        saveCache()
+        // Don't save cache yet - let the refresh happen first
         
         // Notify other HealthKitViewModel instances to reload from cache
         NotificationCenter.default.post(name: Self.healthDataImportedNotification, object: nil)
         
         // Refresh from Apple Health to get any new data since the export was created
+        // This will fetch fresh data, merge it, and THEN save the cache
         Task {
+            logger.info("Triggering incremental refresh after restore")
             await incrementalRefresh(maxDays: 90, startDate: nil)
         }
     }
