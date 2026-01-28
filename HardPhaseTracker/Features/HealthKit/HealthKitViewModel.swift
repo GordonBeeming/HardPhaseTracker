@@ -6,6 +6,10 @@ import OSLog
 @MainActor
 final class HealthKitViewModel: ObservableObject {
     private let logger = Logger(subsystem: "HardPhaseTracker", category: "HealthKit")
+    
+    // Shared singleton instance
+    static let sharedHealth = HealthKitViewModel()
+    
     enum PermissionState: Equatable {
         case notAvailable
         case notDetermined

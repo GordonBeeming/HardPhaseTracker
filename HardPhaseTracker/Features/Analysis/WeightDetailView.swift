@@ -1,14 +1,18 @@
 import SwiftUI
+import SwiftData
 
 struct WeightDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
-    let weights: [WeightSample]
+    @ObservedObject var health: HealthKitViewModel
     @Binding var selectedDaysRange: Int
     
+    @Query private var settings: [AppSettings]
+    private var appSettings: AppSettings? { settings.first }
+    
     private var filteredWeights: [WeightSample] {
-        guard selectedDaysRange > 0 else { return weights }
+        guard selectedDaysRange > 0 else { return health.allWeights }
         let cutoff = Calendar.current.date(byAdding: .day, value: -selectedDaysRange, to: Date()) ?? Date()
-        return weights.filter { $0.date >= cutoff }
+        return health.allWeights.filter { $0.date >= cutoff }
     }
     
     var body: some View {
@@ -46,6 +50,11 @@ struct WeightDetailView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background(colorScheme))
+        .refreshable {
+            let maxDays = appSettings?.healthDataMaxPullDays ?? 90
+            let startDate = appSettings?.healthMonitoringStartDate
+            await health.incrementalRefresh(maxDays: maxDays, startDate: startDate, minDisplayTime: 1.0)
+        }
     }
     
     private func calculateDelta(for index: Int, reversed: [WeightSample]) -> Double? {

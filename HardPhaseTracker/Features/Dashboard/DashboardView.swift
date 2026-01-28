@@ -17,7 +17,7 @@ struct DashboardView: View {
     @State private var isPickingSchedule = false
     @State private var isShowingSettings = false
 
-    @StateObject private var health = HealthKitViewModel()
+    @ObservedObject private var health = HealthKitViewModel.sharedHealth
 
     private var lastMeal: MealLogEntry? { mealLogs.first }
     private var selectedSchedule: EatingWindowSchedule? { settings.first?.selectedSchedule }

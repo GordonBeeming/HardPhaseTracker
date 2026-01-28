@@ -35,7 +35,7 @@ struct SettingsView: View {
     }
 
     @State private var selectedTab: SectionTab? = .dashboard
-    @StateObject private var health = HealthKitViewModel()
+    @ObservedObject private var health = HealthKitViewModel.sharedHealth
     @StateObject private var cloudKitSync = CloudKitSyncService()
     @State private var isRefreshingHealth = false
 

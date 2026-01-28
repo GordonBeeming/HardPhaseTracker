@@ -4,7 +4,7 @@ import Charts
 
 struct AnalysisView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var health = HealthKitViewModel()
+    @ObservedObject private var health = HealthKitViewModel.sharedHealth
     @State private var isShowingSettings = false
 
     @Query private var settings: [AppSettings]
@@ -108,7 +108,7 @@ struct AnalysisView: View {
                         if let w = health.latestWeight {
                             NavigationLink {
                                 WeightDetailView(
-                                    weights: health.allWeights,
+                                    health: health,
                                     selectedDaysRange: Binding(
                                         get: { appSettings?.weightChartDaysRange ?? 14 },
                                         set: { newValue in
