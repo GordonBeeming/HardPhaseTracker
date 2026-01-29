@@ -640,6 +640,12 @@ struct SettingsView: View {
                         NSLocalizedDescriptionKey: "Unable to read the file."
                     ])
                 }
+
+                guard !data.isEmpty else {
+                    throw NSError(domain: "HardPhaseTracker", code: -1, userInfo: [
+                        NSLocalizedDescriptionKey: "The import file is empty or not fully downloaded. If it is in iCloud, tap the cloud icon to download it, then try again."
+                    ])
+                }
                 
                 // Validate it's valid JSON before showing confirmation
                 _ = try JSONSerialization.jsonObject(with: data)

@@ -30,7 +30,7 @@ struct WeightDetailView: View {
             
             Section {
                 ForEach(Array(filteredWeights.reversed().enumerated()), id: \.element.id) { index, sample in
-                    LabeledContent(sample.date.formatted(date: .abbreviated, time: .omitted)) {
+                    LabeledContent(formattedDate(sample.date)) {
                         HStack(spacing: 4) {
                             Text(String(format: "%.1f kg", sample.kilograms))
                                 .foregroundStyle(.primary)
@@ -55,6 +55,12 @@ struct WeightDetailView: View {
             let startDate = appSettings?.healthMonitoringStartDate
             await health.incrementalRefresh(maxDays: maxDays, startDate: startDate, minDisplayTime: 1.0)
         }
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let dayName = date.formatted(.dateTime.weekday(.abbreviated))
+        let dateString = date.formatted(date: .abbreviated, time: .omitted)
+        return "\(dayName), \(dateString)"
     }
     
     private func calculateDelta(for index: Int, reversed: [WeightSample]) -> Double? {
