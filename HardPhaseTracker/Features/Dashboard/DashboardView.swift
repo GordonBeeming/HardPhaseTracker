@@ -244,6 +244,8 @@ private struct DashboardWeightTrendCardView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     let yBounds = calculateYAxisBounds()
+                    let xDomain = calculateXAxisDomain()
+                    
                     Chart {
                         ForEach(health.weightsLast14Days, id: \.date) { s in
                             LineMark(
@@ -268,13 +270,14 @@ private struct DashboardWeightTrendCardView: View {
                             }
                         }
                     }
+                    .chartXScale(domain: xDomain)
+                    .chartYScale(domain: yBounds.min...yBounds.max)
                     .chartXAxis {
-                        AxisMarks(values: xAxisValues()) { value in
+                        AxisMarks(values: .stride(by: .day, count: 7)) { value in
                             AxisGridLine()
                             AxisValueLabel(format: .dateTime.day().month(.abbreviated))
                         }
                     }
-                    .chartYScale(domain: yBounds.min...yBounds.max)
                     .frame(height: 120)
 
                     if weightGoalKg == nil {
@@ -293,6 +296,8 @@ private struct DashboardWeightTrendCardView: View {
                 // Show chart with cached/imported data if available
                 if !health.weightsLast14Days.isEmpty {
                     let yBounds = calculateYAxisBounds()
+                    let xDomain = calculateXAxisDomain()
+                    
                     Chart {
                         ForEach(health.weightsLast14Days, id: \.date) { s in
                             LineMark(
@@ -317,7 +322,14 @@ private struct DashboardWeightTrendCardView: View {
                             }
                         }
                     }
+                    .chartXScale(domain: xDomain)
                     .chartYScale(domain: yBounds.min...yBounds.max)
+                    .chartXAxis {
+                        AxisMarks(values: .stride(by: .day, count: 7)) { value in
+                            AxisGridLine()
+                            AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                        }
+                    }
                     .frame(height: 120)
                     
                     Text("Using imported health data. Connect to Apple Health to sync live data.")
@@ -337,7 +349,14 @@ private struct DashboardWeightTrendCardView: View {
         )
         .accessibilityIdentifier("dashboard.weightTrend")
     }
-
+    
+    private func calculateXAxisDomain() -> ClosedRange<Date> {
+        // Always show the last 14 days, even if there's no data for some days
+        let now = Date()
+        let fourteenDaysAgo = Calendar.current.date(byAdding: .day, value: -14, to: now) ?? now
+        return fourteenDaysAgo...now
+    }
+    
     private func xAxisValues() -> [Date] {
         let weights = health.weightsLast14Days
         guard !weights.isEmpty else { return [] }

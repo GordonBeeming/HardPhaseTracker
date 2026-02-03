@@ -31,6 +31,20 @@ struct AnalysisView: View {
         let cutoff = Calendar.current.date(byAdding: .day, value: -daysRange, to: Date()) ?? Date()
         return health.allWeights.filter { $0.date >= cutoff }
     }
+
+    private var filteredBodyFat: [BodyFatSample] {
+        let daysRange = appSettings?.weightChartDaysRange ?? 14
+        guard daysRange > 0 else {
+            return health.allBodyFat
+        }
+
+        let cutoff = Calendar.current.date(byAdding: .day, value: -daysRange, to: Date()) ?? Date()
+        return health.allBodyFat.filter { $0.date >= cutoff }
+    }
+
+    private var unitSystem: UnitSystem {
+        appSettings?.unitSystemEnum ?? .metric
+    }
     
     private var filteredSleepNights: [SleepNight] {
         let daysRange = appSettings?.sleepChartDaysRange ?? 14 // Default to 14 days
@@ -63,6 +77,17 @@ struct AnalysisView: View {
         guard let previous = previousWeight else { return nil }
         
         return latest.kilograms - previous.kilograms
+    }
+
+    private var bodyFatDelta: Double? {
+        guard let latest = health.latestBodyFat else { return nil }
+
+        let previousSample = health.allBodyFat
+            .filter { $0.date < latest.date }
+            .last
+
+        guard let previous = previousSample else { return nil }
+        return latest.percent - previous.percent
     }
     
     private func formatWeightWithDelta(_ kilograms: Double, delta: Double?) -> String {
@@ -105,39 +130,62 @@ struct AnalysisView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
 
-                        if let w = health.latestWeight {
+                        let detailView = WeightDetailView(
+                            health: health,
+                            selectedDaysRange: Binding(
+                                get: { appSettings?.weightChartDaysRange ?? 14 },
+                                set: { newValue in
+                                    if let settings = appSettings {
+                                        settings.weightChartDaysRange = newValue == 0 ? nil : newValue
+                                    }
+                                }
+                            )
+                        )
+
+                        // Combined Weight & Body Fat row
+                        if health.latestWeight != nil || health.latestBodyFat != nil {
                             NavigationLink {
-                                WeightDetailView(
-                                    health: health,
-                                    selectedDaysRange: Binding(
-                                        get: { appSettings?.weightChartDaysRange ?? 14 },
-                                        set: { newValue in
-                                            if let settings = appSettings {
-                                                settings.weightChartDaysRange = newValue == 0 ? nil : newValue
+                                detailView
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if let w = health.latestWeight {
+                                        HStack {
+                                            Text("Latest weight")
+                                                .foregroundStyle(.secondary)
+                                            Spacer()
+                                            HStack(spacing: 4) {
+                                                Text(String(format: "%.1f kg", w.kilograms))
+                                                    .foregroundStyle(.primary)
+                                                if let delta = weightDelta {
+                                                    Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                                        .foregroundStyle(delta < 0 ? .green : .orange)
+                                                }
                                             }
                                         }
-                                    )
-                                )
-                            } label: {
-                                LabeledContent("Latest weight") {
-                                    HStack(spacing: 4) {
-                                        Text(String(format: "%.1f kg", w.kilograms))
-                                            .foregroundStyle(.primary)
-                                        if let delta = weightDelta {
-                                            Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
-                                                .foregroundStyle(delta < 0 ? .green : .orange)
+                                    }
+                                    
+                                    if let bf = health.latestBodyFat {
+                                        HStack {
+                                            Text("Latest body fat")
+                                                .foregroundStyle(.secondary)
+                                            Spacer()
+                                            HStack(spacing: 4) {
+                                                Text(String(format: "%.1f%%", bf.percent))
+                                                    .foregroundStyle(.primary)
+                                                if let delta = bodyFatDelta {
+                                                    Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                                        .foregroundStyle(delta < 0 ? .green : .orange)
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         } else {
-                            LabeledContent("Latest weight", value: "—")
-                        }
-
-                        if let bf = health.latestBodyFat {
-                            LabeledContent("Latest body fat", value: String(format: "%.1f%%", bf.percent))
-                        } else {
-                            LabeledContent("Latest body fat", value: "—")
+                            VStack(alignment: .leading, spacing: 8) {
+                                LabeledContent("Latest weight", value: "—")
+                                LabeledContent("Latest body fat", value: "—")
+                            }
                         }
                         
                         if let sleep = health.latestSleep {
@@ -167,20 +215,27 @@ struct AnalysisView: View {
                     }
                 }
 
-                if (health.permission == .authorized || !health.allWeights.isEmpty) && !health.allWeights.isEmpty {
+                if (health.permission == .authorized || !health.allWeights.isEmpty || !health.allBodyFat.isEmpty) {
                     Section("Weight Analysis") {
-                        NavigationLink("Weight Change by Week") {
-                            WeightByWeekView(
-                                weeklyChanges: weeklyWeightChanges,
-                                allWeights: filteredWeights,
-                                weekStartDay: appSettings?.weekStartDayEnum ?? .monday
-                            )
-                        }
-                        
-                        NavigationLink("Weight Change by Day of Week") {
-                            WeightByDayOfWeekView(dayData: averageWeightChangeByDayOfWeek)
+                        if !health.allWeights.isEmpty {
+                            NavigationLink("Weight Change by Week") {
+                                WeightByWeekView(
+                                    weeklyChanges: weeklyWeightChanges,
+                                    allWeights: filteredWeights,
+                                    weekStartDay: appSettings?.weekStartDayEnum ?? .monday
+                                )
+                            }
+
+                            NavigationLink("Weight Change by Day of Week") {
+                                WeightByDayOfWeekView(dayData: averageWeightChangeByDayOfWeek)
+                            }
+                        } else {
+                            Text("No weight data yet.")
+                                .foregroundStyle(.secondary)
                         }
                     }
+
+
                 }
             }
             .navigationTitle("Analysis")

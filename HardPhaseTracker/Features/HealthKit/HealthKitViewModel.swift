@@ -36,6 +36,11 @@ final class HealthKitViewModel: ObservableObject {
         let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
         return allWeights.filter { $0.date >= cutoff }
     }
+
+    var bodyFatLast14Days: [BodyFatSample] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+        return allBodyFat.filter { $0.date >= cutoff }
+    }
     
     var sleepLast7Nights: [SleepNight] {
         // Return the 7 most recent nights, already sorted descending by date
@@ -349,8 +354,13 @@ final class HealthKitViewModel: ObservableObject {
             // Don't just replace - merge with any existing data first
             let merged = mergeWeights(existing: allWeights, new: weights)
             allWeights = merged
+            logger.info("After merge, allWeights count: \(self.allWeights.count)")
             firstWeight = allWeights.first
             latestWeight = allWeights.last
+            
+            // SAVE CACHE IMMEDIATELY after restoring
+            saveCache()
+            logger.info("Cache saved after restoring weights")
         }
         
         if let bodyFat = bodyFat {
@@ -366,16 +376,17 @@ final class HealthKitViewModel: ObservableObject {
             allSleepNights = sleepNights
         }
         
-        // Don't save cache yet - let the refresh happen first
-        
         // Notify other HealthKitViewModel instances to reload from cache
         NotificationCenter.default.post(name: Self.healthDataImportedNotification, object: nil)
         
-        // Refresh from Apple Health to get any new data since the export was created
-        // This will fetch fresh data, merge it, and THEN save the cache
-        Task {
-            logger.info("Triggering incremental refresh after restore")
-            await incrementalRefresh(maxDays: 90, startDate: nil)
+        // Only trigger refresh if connected to Apple Health
+        if permission == .authorized {
+            Task {
+                logger.info("Triggering incremental refresh after restore (Apple Health connected)")
+                await incrementalRefresh(maxDays: 90, startDate: nil)
+            }
+        } else {
+            logger.info("Skipping incremental refresh after restore (not connected to Apple Health)")
         }
     }
 
@@ -463,4 +474,3 @@ final class HealthKitViewModel: ObservableObject {
         cacheUpdatedAt ?? .distantPast
     }
 }
-
