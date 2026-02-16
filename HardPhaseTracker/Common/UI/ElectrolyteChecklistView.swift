@@ -3,7 +3,6 @@ import SwiftData
 
 struct ElectrolyteChecklistView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
 
     let date: Date
     let settings: AppSettings?
@@ -77,11 +76,7 @@ struct ElectrolyteChecklistView: View {
                     }
                 }
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppTheme.cardBackground(colorScheme))
-            )
+            .glassCard(cornerRadius: 16, padding: 12)
             .confirmationDialog(
                 "Select electrolyte",
                 isPresented: Binding(

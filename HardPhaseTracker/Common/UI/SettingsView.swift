@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
 
     @Query private var settings: [AppSettings]
     @Query(sort: [SortDescriptor(\MealTemplate.name)]) private var templates: [MealTemplate]
@@ -82,13 +83,19 @@ struct SettingsView: View {
                     List(SectionTab.allCases, selection: $selectedTab) { t in
                         Label(t.rawValue, systemImage: t.systemImage)
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .listRowBackground(AppTheme.glassFill(colorScheme))
                     .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
                     .safeAreaInset(edge: .bottom) {
                         versionFooter
                     }
                 } detail: {
                     settingsDetail(tab: currentTab)
                 }
+                .background(Color.clear)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Close") { dismiss() }
@@ -101,7 +108,12 @@ struct SettingsView: View {
                             Label(t.rawValue, systemImage: t.systemImage)
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .listRowBackground(AppTheme.glassFill(colorScheme))
                     .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
                     .navigationDestination(for: SectionTab.self) { t in
                         settingsDetail(tab: t)
                     }
@@ -114,8 +126,11 @@ struct SettingsView: View {
                         }
                     }
                 }
+                .background(Color.clear)
             }
         }
+        .appScreen()
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onAppear {
             let current = settings.first ?? AppSettings()
             if settings.isEmpty { modelContext.insert(current) }
@@ -190,6 +205,10 @@ struct SettingsView: View {
                     Form {
                         Text("Loading settings...")
                     }
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .listStyle(.insetGrouped)
+                    .listRowBackground(AppTheme.glassFill(colorScheme))
                 }
             } else {
                 Form {
@@ -499,6 +518,11 @@ struct SettingsView: View {
         }
         }
         .navigationTitle(tab.rawValue)
+        .navigationBarTitleDisplayMode(.inline)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .listRowBackground(AppTheme.glassFill(colorScheme))
         .safeAreaInset(edge: .bottom) {
             versionFooter
         }
@@ -784,7 +808,7 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color(uiColor: .systemGroupedBackground))
+        .background(.ultraThinMaterial)
     }
 }
 

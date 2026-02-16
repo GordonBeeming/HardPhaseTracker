@@ -9,11 +9,18 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    private enum RootTab: Hashable {
+        case dashboard
+        case log
+        case meals
+        case analysis
+    }
+
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     
     @StateObject private var cloudKitSync = CloudKitSyncService()
-    @State private var selectedTab = 0
+    @State private var selectedTab: RootTab = .dashboard
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -21,45 +28,29 @@ struct ContentView: View {
                 .tabItem {
                     Label("Dashboard", systemImage: "drop")
                 }
-                .tag(0)
+                .tag(RootTab.dashboard)
 
             LogView()
                 .tabItem {
                     Label("Log", systemImage: "calendar")
                 }
-                .tag(1)
+                .tag(RootTab.log)
 
             MealsView()
                 .tabItem {
                     Label("Meals", systemImage: "fork.knife")
                 }
-                .tag(2)
+                .tag(RootTab.meals)
 
             AnalysisView()
                 .tabItem {
                     Label("Analysis", systemImage: "chart.line.uptrend.xyaxis")
                 }
-                .tag(3)
+                .tag(RootTab.analysis)
         }
-        .gesture(
-            DragGesture(minimumDistance: 50)
-                .onEnded { value in
-                    let horizontalAmount = value.translation.width
-                    let verticalAmount = value.translation.height
-                    
-                    // Only respond to horizontal swipes (more horizontal than vertical)
-                    if abs(horizontalAmount) > abs(verticalAmount) {
-                        if horizontalAmount < 0 && selectedTab < 3 {
-                            // Swipe left - go to next tab
-                            selectedTab += 1
-                        } else if horizontalAmount > 0 && selectedTab > 0 {
-                            // Swipe right - go to previous tab
-                            selectedTab -= 1
-                        }
-                    }
-                }
-        )
         .tint(AppTheme.primary(colorScheme))
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .task {
             SeedSchedulesService.seedIfNeeded(modelContext: modelContext)
             

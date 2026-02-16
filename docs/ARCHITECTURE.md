@@ -98,6 +98,15 @@ Reusable UI components used by multiple tabs:
 - `SchedulePickerView.swift` - Schedule picker (used in Dashboard)
 - `EatingWindowStatusView.swift` - Eating window status (used in Dashboard)
 - `FastingTimerView.swift` - Fasting timer component
+- `GlassSurface.swift` - Shared liquid-glass card primitives (`glassCard`)
+
+## UI System Conventions
+
+1. **Single Screen Backdrop**: Screens should use `.appScreen()` for consistent glass backdrop treatment.
+2. **Shared Surfaces**: Use `glassCard(...)` for cards/sections instead of ad hoc shape fills.
+3. **Theme Tokens Only**: Glass fill/stroke/shadow values come from `AppTheme`.
+4. **Native Tab Behavior**: Avoid root-level custom swipe gestures on `TabView`.
+5. **Tab Performance**: Guard expensive tab-root `.task` work so tab switches stay smooth.
 
 ## Key Principles
 

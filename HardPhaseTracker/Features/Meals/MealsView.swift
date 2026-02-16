@@ -7,8 +7,6 @@ struct MealsView: View {
 
     @Query(sort: [SortDescriptor(\MealTemplate.name)])
     private var templates: [MealTemplate]
-    
-    @Query private var mealLogEntries: [MealLogEntry]
 
     @State private var isAdding = false
     @State private var isDuplicating = false
@@ -36,7 +34,9 @@ struct MealsView: View {
                         systemImage: "fork.knife",
                         description: Text("Create your first meal template.")
                     )
-                    .background(AppTheme.background(colorScheme))
+                    .glassCard(cornerRadius: 22, padding: 20)
+                    .padding(.horizontal)
+                    .padding(.top, 10)
                 } else {
                     List(selection: $selectedTemplate) {
                         ForEach(visibleTemplates) { template in
@@ -56,12 +56,17 @@ struct MealsView: View {
                                 }
                                 .tint(.blue)
                             }
+                            .listRowBackground(AppTheme.glassFill(colorScheme))
+                            .listRowSeparatorTint(AppTheme.glassStroke(colorScheme))
                         }
                         .onDelete(perform: deleteTemplates)
                     }
-                    .listStyle(.insetGrouped)
+                    .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .background(AppTheme.background(colorScheme))
+                    .background(Color.clear)
+                    .glassCard(cornerRadius: 22, padding: 8)
+                    .padding(.horizontal)
+                    .padding(.top, 10)
                 }
             }
             .navigationTitle("Meals")
@@ -88,6 +93,7 @@ struct MealsView: View {
                 MealTemplateDetailView(template: selected)
             } else {
                 ContentUnavailableView("Select a meal", systemImage: "fork.knife")
+                    .background(Color.clear)
             }
         }
         .appScreen()

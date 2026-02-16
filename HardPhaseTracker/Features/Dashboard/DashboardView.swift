@@ -3,7 +3,6 @@ import SwiftData
 import Charts
 
 struct DashboardView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: [SortDescriptor(\MealLogEntry.timestamp, order: .reverse)])
@@ -16,6 +15,7 @@ struct DashboardView: View {
     @State private var isLoggingMeal = false
     @State private var isPickingSchedule = false
     @State private var isShowingSettings = false
+    @State private var initialRefreshPerformed = false
 
     @ObservedObject private var health = HealthKitViewModel.sharedHealth
 
@@ -56,11 +56,7 @@ struct DashboardView: View {
                             }
                             .buttonStyle(PrimaryButtonStyle())
                         }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(AppTheme.cardBackground(colorScheme))
-                        )
+                        .glassCard()
                         .padding(.horizontal)
                     } else if let selectedSchedule {
                         TimelineView(.periodic(from: .now, by: 60)) { context in
@@ -82,11 +78,7 @@ struct DashboardView: View {
                                             .font(.footnote)
                                         }
                                     }
-                                    .padding(16)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .fill(AppTheme.cardBackground(colorScheme))
-                                    )
+                                    .glassCard()
                                     .padding(.horizontal)
                                 } else {
                                     VStack(alignment: .leading, spacing: 12) {
@@ -102,11 +94,7 @@ struct DashboardView: View {
                                             .font(.footnote)
                                         }
                                     }
-                                    .padding(16)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .fill(Color.orange.opacity(0.12))
-                                    )
+                                    .glassCard()
                                     .padding(.horizontal)
                                 }
                             }
@@ -134,7 +122,6 @@ struct DashboardView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 24)
             }
-            .background(AppTheme.background(colorScheme))
             .safeAreaPadding(.top, 8)
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.inline)
@@ -157,6 +144,8 @@ struct DashboardView: View {
         }
         .appScreen()
         .task {
+            guard !initialRefreshPerformed else { return }
+            initialRefreshPerformed = true
             let maxDays = appSettings?.healthDataMaxPullDays ?? 90
             let startDate = appSettings?.healthMonitoringStartDate
             await health.refreshIfTodayWeightMissing(maxDays: maxDays, startDate: startDate)
@@ -189,8 +178,6 @@ struct DashboardView: View {
 }
 
 private struct DashboardWeightTrendCardView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     @ObservedObject var health: HealthKitViewModel
     let unitSystem: UnitSystem
     let weightGoalKg: Double?
@@ -342,11 +329,7 @@ private struct DashboardWeightTrendCardView: View {
                 }
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.cardBackground(colorScheme))
-        )
+        .glassCard()
         .accessibilityIdentifier("dashboard.weightTrend")
     }
     

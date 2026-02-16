@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct HardPhaseTrackerApp: App {
@@ -15,6 +16,8 @@ struct HardPhaseTrackerApp: App {
     @State private var containerErrorMessage: String?
 
     init() {
+        configureSystemChrome()
+
         let schema = Schema([
             MealTemplate.self,
             MealComponent.self,
@@ -80,5 +83,26 @@ struct HardPhaseTrackerApp: App {
             container = nil
             containerErrorMessage = e.localizedDescription
         }
+    }
+
+    private func configureSystemChrome() {
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithTransparentBackground()
+        tabAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        tabAppearance.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        tabAppearance.shadowColor = UIColor.white.withAlphaComponent(0.12)
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithTransparentBackground()
+        navAppearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        navAppearance.backgroundColor = UIColor.white.withAlphaComponent(0.04)
+        navAppearance.shadowColor = .clear
+
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().compactAppearance = navAppearance
     }
 }

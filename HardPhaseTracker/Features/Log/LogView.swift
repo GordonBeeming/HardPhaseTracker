@@ -31,11 +31,7 @@ struct LogView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.systemBackground))
-                    )
+                    .glassCard()
                 )
             }
             .navigationTitle("Log")

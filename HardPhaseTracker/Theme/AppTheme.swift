@@ -21,6 +21,20 @@ enum AppTheme {
         Color(.systemGroupedBackground)
     }
 
+    static func glassBackdropTop(_ scheme: ColorScheme) -> Color {
+        if scheme == .dark {
+            return Color(hex: 0x0F172A)
+        }
+        return Color(hex: 0xE8F4FF)
+    }
+
+    static func glassBackdropBottom(_ scheme: ColorScheme) -> Color {
+        if scheme == .dark {
+            return Color(hex: 0x020617)
+        }
+        return Color(hex: 0xF8FBFF)
+    }
+
     static func cardBackground(_ scheme: ColorScheme) -> Color {
         Color(.systemBackground)
     }
@@ -39,6 +53,27 @@ enum AppTheme {
 
     static func divider(_ scheme: ColorScheme) -> Color {
         Color(hex: scheme == .dark ? Hex.darkDivider : Hex.lightDivider)
+    }
+
+    static func glassFill(_ scheme: ColorScheme) -> Color {
+        if scheme == .dark {
+            return .white.opacity(0.06)
+        }
+        return .white.opacity(0.56)
+    }
+
+    static func glassStroke(_ scheme: ColorScheme) -> Color {
+        if scheme == .dark {
+            return .white.opacity(0.16)
+        }
+        return .white.opacity(0.72)
+    }
+
+    static func glassShadow(_ scheme: ColorScheme) -> Color {
+        if scheme == .dark {
+            return .black.opacity(0.45)
+        }
+        return .black.opacity(0.12)
     }
 }
 

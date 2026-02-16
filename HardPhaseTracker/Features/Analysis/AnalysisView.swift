@@ -6,6 +6,7 @@ struct AnalysisView: View {
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var health = HealthKitViewModel.sharedHealth
     @State private var isShowingSettings = false
+    @State private var initialHealthRefreshDone = false
 
     @Query private var settings: [AppSettings]
     @Query private var mealEntries: [MealLogEntry]
@@ -240,9 +241,14 @@ struct AnalysisView: View {
             }
             .navigationTitle("Analysis")
             .navigationBarTitleDisplayMode(.inline)
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(AppTheme.background(colorScheme))
+            .listRowBackground(AppTheme.glassFill(colorScheme))
+            .listRowSeparatorTint(AppTheme.glassStroke(colorScheme))
+            .background(Color.clear)
+            .glassCard(cornerRadius: 22, padding: 8)
+            .padding(.horizontal)
+            .padding(.top, 10)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -254,6 +260,8 @@ struct AnalysisView: View {
                 }
             }
             .task {
+                guard !initialHealthRefreshDone else { return }
+                initialHealthRefreshDone = true
                 // Prefer cached data for fast load; only hit HealthKit when cache is empty/stale.
                 let maxDays = appSettings?.healthDataMaxPullDays ?? 90
                 let startDate = appSettings?.healthMonitoringStartDate

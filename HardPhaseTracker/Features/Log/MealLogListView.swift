@@ -86,6 +86,7 @@ struct MealLogListView: View {
                                         modelContext.saveLogged()
                                     }
                                 }
+                                .listRowBackground(AppTheme.glassFill(colorScheme))
                             }
                         }
                     }
@@ -102,7 +103,7 @@ struct MealLogListView: View {
                 .scrollContentBackground(.hidden)
             }
         }
-        .background(AppTheme.background(colorScheme))
+        .background(Color.clear)
         .sheet(item: $editingEntry) { entry in
             MealLogEntryEditorView(entry: entry)
         }

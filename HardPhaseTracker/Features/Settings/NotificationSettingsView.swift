@@ -6,6 +6,7 @@ struct NotificationSettingsView: View {
     @Bindable var settings: AppSettings
     @Query private var allOverrides: [EatingWindowOverride]
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showingPermissionAlert = false
@@ -85,6 +86,10 @@ struct NotificationSettingsView: View {
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .listRowBackground(AppTheme.glassFill(colorScheme))
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .task {
