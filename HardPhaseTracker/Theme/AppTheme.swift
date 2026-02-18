@@ -25,14 +25,14 @@ enum AppTheme {
         if scheme == .dark {
             return Color(hex: 0x0F172A)
         }
-        return Color(hex: 0xE8F4FF)
+        return Color(hex: 0xF8FBFF)
     }
 
     static func glassBackdropBottom(_ scheme: ColorScheme) -> Color {
         if scheme == .dark {
             return Color(hex: 0x020617)
         }
-        return Color(hex: 0xF8FBFF)
+        return Color(hex: 0xE8F4FF)
     }
 
     static func cardBackground(_ scheme: ColorScheme) -> Color {
