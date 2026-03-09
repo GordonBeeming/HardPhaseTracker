@@ -20,8 +20,10 @@ final class HealthKitViewModel: ObservableObject {
     @Published private(set) var permission: PermissionState = .notDetermined
     @Published private(set) var latestWeight: WeightSample?
     @Published private(set) var latestBodyFat: BodyFatSample?
+    @Published private(set) var latestMuscleMass: MuscleMassSample?
     @Published private(set) var allWeights: [WeightSample] = [] // All weights up to maxDays
     @Published private(set) var allBodyFat: [BodyFatSample] = [] // All body fat samples up to maxDays
+    @Published private(set) var allMuscleMass: [MuscleMassSample] = [] // All muscle mass samples up to maxDays
     @Published private(set) var firstWeight: WeightSample?
     @Published private(set) var allSleepNights: [SleepNight] = [] // All sleep up to maxDays
     @Published private(set) var errorMessage: String?
@@ -42,6 +44,11 @@ final class HealthKitViewModel: ObservableObject {
         return allBodyFat.filter { $0.date >= cutoff }
     }
     
+    var muscleMassLast14Days: [MuscleMassSample] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+        return allMuscleMass.filter { $0.date >= cutoff }
+    }
+    
     var sleepLast7Nights: [SleepNight] {
         // Return the 7 most recent nights, already sorted descending by date
         return Array(allSleepNights.prefix(7))
@@ -56,14 +63,16 @@ final class HealthKitViewModel: ObservableObject {
     private struct CachePayload: Codable {
         var latestWeight: WeightSample?
         var latestBodyFat: BodyFatSample?
+        var latestMuscleMass: MuscleMassSample?
         var allWeights: [WeightSample]? // Optional for migration
         var allBodyFat: [BodyFatSample]? // Optional for migration
+        var allMuscleMass: [MuscleMassSample]? // Optional for migration
         var firstWeight: WeightSample? // Optional for migration
         var allSleepNights: [SleepNight]? // Optional for migration
         var updatedAt: Date
     }
 
-    private static let cacheKey = "healthkit.cache.v3" // Bumped version for allBodyFat field
+    private static let cacheKey = "healthkit.cache.v4" // Bumped version for allMuscleMass field
     private static let disconnectedKey = "healthkit.userDisconnected"
     private static let healthDataImportedNotification = Notification.Name("HealthKitViewModel.healthDataImported")
 
@@ -112,15 +121,19 @@ final class HealthKitViewModel: ObservableObject {
         do {
             async let w = service.fetchLatestWeight()
             async let bf = service.fetchLatestBodyFat()
+            async let mm = service.fetchLatestMuscleMass()
             async let wAll = service.fetchWeightSamples(lastDays: maxDays, startDate: startDate)
             async let bfAll = service.fetchBodyFatSamples(lastDays: maxDays, startDate: startDate)
+            async let mmAll = service.fetchMuscleMassSamples(lastDays: maxDays, startDate: startDate)
             async let first = service.fetchFirstWeight(afterDate: startDate)
             async let sAll = service.fetchSleepNights(lastN: maxDays)
 
             let fetchedWeight = try await w
             let fetchedBodyFat = try await bf
+            let fetchedMuscleMass = try await mm
             let fetchedWeights = try await wAll
             let fetchedBodyFats = try await bfAll
+            let fetchedMuscleMasses = try await mmAll
             let fetchedFirstWeight = try await first
             let fetchedSleep = try await sAll
             
@@ -135,6 +148,11 @@ final class HealthKitViewModel: ObservableObject {
             if fetchedBodyFat != nil || !fetchedBodyFats.isEmpty {
                 latestBodyFat = fetchedBodyFat
                 allBodyFat = fetchedBodyFats
+            }
+            
+            if fetchedMuscleMass != nil || !fetchedMuscleMasses.isEmpty {
+                latestMuscleMass = fetchedMuscleMass
+                allMuscleMass = fetchedMuscleMasses
             }
             
             if !fetchedSleep.isEmpty {
@@ -169,15 +187,19 @@ final class HealthKitViewModel: ObservableObject {
             // Fetch only new data since last refresh
             async let w = service.fetchLatestWeight()
             async let bf = service.fetchLatestBodyFat()
+            async let mm = service.fetchLatestMuscleMass()
             async let newWeights = service.fetchWeightSamples(lastDays: maxDays, startDate: incrementalStartDate)
             async let newBodyFats = service.fetchBodyFatSamples(lastDays: maxDays, startDate: incrementalStartDate)
+            async let newMuscleMasses = service.fetchMuscleMassSamples(lastDays: maxDays, startDate: incrementalStartDate)
             async let first = service.fetchFirstWeight(afterDate: startDate)
             async let sAll = service.fetchSleepNights(lastN: maxDays)
 
             let fetchedWeight = try await w
             let fetchedBodyFat = try await bf
+            let fetchedMuscleMass = try await mm
             let fetchedWeights = try await newWeights
             let fetchedBodyFats = try await newBodyFats
+            let fetchedMuscleMasses = try await newMuscleMasses
             let fetchedFirstWeight = try await first
             let fetchedSleep = try await sAll
             
@@ -204,6 +226,17 @@ final class HealthKitViewModel: ObservableObject {
                 // Filter for all body fat samples within maxDays
                 let cutoffMaxDays = Calendar.current.date(byAdding: .day, value: -maxDays, to: Date()) ?? Date()
                 allBodyFat = mergedBodyFats.filter { $0.date >= cutoffMaxDays }
+            }
+            
+            if fetchedMuscleMass != nil || !fetchedMuscleMasses.isEmpty {
+                latestMuscleMass = fetchedMuscleMass
+                
+                // Merge new muscle mass samples with existing cached samples
+                let mergedMuscleMasses = mergeMuscleMasses(existing: allMuscleMass, new: fetchedMuscleMasses)
+                
+                // Filter for all muscle mass samples within maxDays
+                let cutoffMaxDays = Calendar.current.date(byAdding: .day, value: -maxDays, to: Date()) ?? Date()
+                allMuscleMass = mergedMuscleMasses.filter { $0.date >= cutoffMaxDays }
             }
             
             if !fetchedSleep.isEmpty {
@@ -283,6 +316,33 @@ final class HealthKitViewModel: ObservableObject {
         // Return sorted array
         return bodyFatsByDay.values.sorted { $0.date < $1.date }
     }
+    
+    private func mergeMuscleMasses(existing: [MuscleMassSample], new: [MuscleMassSample]) -> [MuscleMassSample] {
+        // Create a dictionary of existing muscle mass samples by date (truncated to day)
+        var muscleMassesByDay: [Date: MuscleMassSample] = [:]
+        
+        let calendar = Calendar.current
+        for muscleMass in existing {
+            let day = calendar.startOfDay(for: muscleMass.date)
+            muscleMassesByDay[day] = muscleMass
+        }
+        
+        // Add/update with new muscle mass samples
+        for muscleMass in new {
+            let day = calendar.startOfDay(for: muscleMass.date)
+            // Keep the newer sample if there are multiple on the same day
+            if let existingMuscleMass = muscleMassesByDay[day] {
+                if muscleMass.date > existingMuscleMass.date {
+                    muscleMassesByDay[day] = muscleMass
+                }
+            } else {
+                muscleMassesByDay[day] = muscleMass
+            }
+        }
+        
+        // Return sorted array
+        return muscleMassesByDay.values.sorted { $0.date < $1.date }
+    }
 
     func refreshIfCacheStale(maxAgeHours: Double = 12, maxDays: Int = 90, startDate: Date? = nil) async {
         await refreshPermission()
@@ -291,8 +351,13 @@ final class HealthKitViewModel: ObservableObject {
 
         let last = cachedUpdatedAt()
         let age = Date().timeIntervalSince(last)
-        if allWeights.isEmpty || allSleepNights.isEmpty || age > maxAgeHours * 3600 {
+        // Also refresh if we don't have enough data yet
+        let hasMinimalData = !allWeights.isEmpty && !allSleepNights.isEmpty
+        if !hasMinimalData || age > maxAgeHours * 3600 {
+            logger.info("Cache is stale (age: \(age/3600)h, hasData: \(hasMinimalData)) - refreshing")
             await refresh(maxDays: maxDays, startDate: startDate)
+        } else {
+            logger.info("Cache is fresh (age: \(age/3600)h) - skipping refresh")
         }
     }
     
@@ -300,15 +365,22 @@ final class HealthKitViewModel: ObservableObject {
         await refreshPermission()
         guard permission == .authorized else { return }
         guard !isDisconnected else { return }
-        
+
+        // If cache is empty, do a full refresh to load all historical data
+        let hasData = !allWeights.isEmpty || !allSleepNights.isEmpty || !allBodyFat.isEmpty
+        if !hasData {
+            logger.info("Cache is empty - performing full refresh")
+            await refresh(maxDays: maxDays, startDate: startDate)
+            return
+        }
+
         // Check if we have a weight sample from today
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        
+
         let hasTodayWeight = latestWeight.map { weight in
             calendar.isDate(weight.date, inSameDayAs: Date())
         } ?? false
-        
+
         // If no weight for today, do an incremental refresh
         if !hasTodayWeight {
             await incrementalRefresh(maxDays: maxDays, startDate: startDate)
@@ -327,8 +399,10 @@ final class HealthKitViewModel: ObservableObject {
         cacheUpdatedAt = nil
         latestWeight = nil
         latestBodyFat = nil
+        latestMuscleMass = nil
         allWeights = []
         allBodyFat = []
+        allMuscleMass = []
         firstWeight = nil
         allSleepNights = []
     }
@@ -345,6 +419,7 @@ final class HealthKitViewModel: ObservableObject {
     func restoreHealthData(
         weights: [WeightSample]?,
         bodyFat: [BodyFatSample]?,
+        muscleMass: [MuscleMassSample]?,
         sleepNights: [SleepNight]?
     ) {
         logger.info("Restoring health data from backup")
@@ -369,6 +444,14 @@ final class HealthKitViewModel: ObservableObject {
             let merged = mergeBodyFats(existing: allBodyFat, new: bodyFat)
             allBodyFat = merged
             latestBodyFat = allBodyFat.last
+        }
+        
+        if let muscleMass = muscleMass {
+            logger.info("Restoring \(muscleMass.count) muscle mass samples")
+            // Don't just replace - merge with any existing data first
+            let merged = mergeMuscleMasses(existing: allMuscleMass, new: muscleMass)
+            allMuscleMass = merged
+            latestMuscleMass = allMuscleMass.last
         }
         
         if let sleepNights = sleepNights {
@@ -438,8 +521,10 @@ final class HealthKitViewModel: ObservableObject {
 
         latestWeight = payload.latestWeight
         latestBodyFat = payload.latestBodyFat
+        latestMuscleMass = payload.latestMuscleMass
         allWeights = payload.allWeights ?? []
         allBodyFat = payload.allBodyFat ?? []
+        allMuscleMass = payload.allMuscleMass ?? []
         firstWeight = payload.firstWeight
         allSleepNights = payload.allSleepNights ?? []
         cacheUpdatedAt = payload.updatedAt
@@ -458,8 +543,10 @@ final class HealthKitViewModel: ObservableObject {
         let payload = CachePayload(
             latestWeight: latestWeight,
             latestBodyFat: latestBodyFat,
+            latestMuscleMass: latestMuscleMass,
             allWeights: allWeights,
             allBodyFat: allBodyFat,
+            allMuscleMass: allMuscleMass,
             firstWeight: firstWeight,
             allSleepNights: allSleepNights,
             updatedAt: Date()

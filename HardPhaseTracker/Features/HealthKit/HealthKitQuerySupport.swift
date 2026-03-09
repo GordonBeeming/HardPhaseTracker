@@ -20,6 +20,11 @@ enum HealthKitQuerySupport {
         return BodyFatSample(date: sample.startDate, percent: fraction * 100)
     }
 
+    static func mapMuscleMass(_ sample: HKQuantitySample) -> MuscleMassSample {
+        let kg = sample.quantity.doubleValue(for: .gramUnit(with: .kilo))
+        return MuscleMassSample(date: sample.startDate, kilograms: kg)
+    }
+
     static func aggregateSleepNights(samples: [HKCategorySample], nights: Int, calendar: Calendar = .current) -> [SleepNight] {
         var totalsByDay: [Date: TimeInterval] = [:]
 

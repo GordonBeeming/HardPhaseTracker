@@ -24,6 +24,7 @@ final class HealthKitService {
         let readTypes: Set<HKObjectType> = Set([
             HKObjectType.quantityType(forIdentifier: .bodyMass),
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage),
+            HKObjectType.quantityType(forIdentifier: .leanBodyMass),
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
         ].compactMap { $0 as HKObjectType? })
 
@@ -40,6 +41,7 @@ final class HealthKitService {
         let readTypes: Set<HKObjectType> = Set([
             HKObjectType.quantityType(forIdentifier: .bodyMass),
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage),
+            HKObjectType.quantityType(forIdentifier: .leanBodyMass),
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
         ].compactMap { $0 as HKObjectType? })
 
@@ -172,6 +174,46 @@ final class HealthKitService {
 
                 let cats = samples as? [HKCategorySample] ?? []
                 continuation.resume(returning: HealthKitQuerySupport.aggregateSleepNights(samples: cats, nights: nights))
+            }
+            store.execute(query)
+        }
+    }
+    
+    func fetchLatestMuscleMass() async throws -> MuscleMassSample? {
+        guard let type = HKObjectType.quantityType(forIdentifier: .leanBodyMass) else { return nil }
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: nil, limit: 1, sortDescriptors: [sort]) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                let sample = (samples?.first as? HKQuantitySample).map(HealthKitQuerySupport.mapMuscleMass)
+                continuation.resume(returning: sample)
+            }
+            store.execute(query)
+        }
+    }
+    
+    func fetchMuscleMassSamples(lastDays days: Int, startDate: Date? = nil) async throws -> [MuscleMassSample] {
+        guard let type = HKObjectType.quantityType(forIdentifier: .leanBodyMass) else { return [] }
+        
+        // Calculate effective start date (respect both lastDays and monitoring start date).
+        let daysStart = HealthKitQuerySupport.startDateForLastDays(days)
+        let effectiveStart = startDate.map { max($0, daysStart) } ?? daysStart
+        
+        let predicate = HKQuery.predicateForSamples(withStart: effectiveStart, end: Date(), options: [])
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sort]) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                let mapped = (samples as? [HKQuantitySample])?.map(HealthKitQuerySupport.mapMuscleMass) ?? []
+                continuation.resume(returning: mapped)
             }
             store.execute(query)
         }

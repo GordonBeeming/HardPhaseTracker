@@ -3,7 +3,7 @@ import SwiftData
 
 @Model
 final class AppSettings {
-    @Relationship
+    @Relationship(inverse: \EatingWindowSchedule.selectedBySettings)
     var selectedSchedule: EatingWindowSchedule?
 
     // Dashboard

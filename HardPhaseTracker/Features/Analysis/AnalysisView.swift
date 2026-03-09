@@ -91,6 +91,17 @@ struct AnalysisView: View {
         return latest.percent - previous.percent
     }
     
+    private var muscleMassDelta: Double? {
+        guard let latest = health.latestMuscleMass else { return nil }
+        
+        let previousSample = health.allMuscleMass
+            .filter { $0.date < latest.date }
+            .last
+        
+        guard let previous = previousSample else { return nil }
+        return latest.kilograms - previous.kilograms
+    }
+    
     private func formatWeightWithDelta(_ kilograms: Double, delta: Double?) -> String {
         let weightStr = String(format: "%.1f kg", kilograms)
         guard let delta = delta else { return weightStr }
@@ -143,8 +154,8 @@ struct AnalysisView: View {
                             )
                         )
 
-                        // Combined Weight & Body Fat row
-                        if health.latestWeight != nil || health.latestBodyFat != nil {
+                        // Combined Weight & Body Composition row
+                        if health.latestWeight != nil || health.latestBodyFat != nil || health.latestMuscleMass != nil {
                             NavigationLink {
                                 detailView
                             } label: {
@@ -180,12 +191,29 @@ struct AnalysisView: View {
                                             }
                                         }
                                     }
+                                    
+                                    if let mm = health.latestMuscleMass {
+                                        HStack {
+                                            Text("Latest muscle mass")
+                                                .foregroundStyle(.secondary)
+                                            Spacer()
+                                            HStack(spacing: 4) {
+                                                Text(String(format: "%.1f kg", mm.kilograms))
+                                                    .foregroundStyle(.primary)
+                                                if let delta = muscleMassDelta {
+                                                    Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                                        .foregroundStyle(delta > 0 ? .green : .orange)
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         } else {
                             VStack(alignment: .leading, spacing: 8) {
                                 LabeledContent("Latest weight", value: "—")
                                 LabeledContent("Latest body fat", value: "—")
+                                LabeledContent("Latest muscle mass", value: "—")
                             }
                         }
                         
@@ -241,14 +269,8 @@ struct AnalysisView: View {
             }
             .navigationTitle("Analysis")
             .navigationBarTitleDisplayMode(.inline)
-            .listStyle(.plain)
+            .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .listRowBackground(AppTheme.glassFill(colorScheme))
-            .listRowSeparatorTint(AppTheme.glassStroke(colorScheme))
-            .background(Color.clear)
-            .glassCard(cornerRadius: 22, padding: 8)
-            .padding(.horizontal)
-            .padding(.top, 10)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

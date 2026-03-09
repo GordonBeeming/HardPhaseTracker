@@ -1,4 +1,5 @@
 import Foundation
+import CoreData
 import OSLog
 import SwiftData
 import CloudKit
@@ -31,6 +32,75 @@ enum AppModelContainerProvider {
             } catch {
                 logger.error("❌ Unexpected error creating CloudKit zone: \(error.localizedDescription)")
             }
+        }
+    }
+
+    /// Forces CloudKit to register the complete schema (all record types, fields, and
+    /// relationships). Without this, CloudKit uses Just-In-Time inference and may miss
+    /// parts of the schema that haven't been exercised by writing data.
+    /// Only called in DEBUG builds to avoid App Store review issues.
+    private static func initializeCloudKitSchemaIfNeeded(
+        schema: Schema,
+        storeURL: URL,
+        containerId: String
+    ) {
+        // Use a separate store file so we don't interfere with the SwiftData container's lock
+        let schemaInitURL = storeURL.deletingLastPathComponent()
+            .appendingPathComponent("cloudkit-schema-init.sqlite")
+
+        do {
+            let modelTypes: [any PersistentModel.Type] = [
+                MealTemplate.self,
+                MealComponent.self,
+                MealLogEntry.self,
+                ElectrolyteIntakeEntry.self,
+                ElectrolyteTargetSetting.self,
+                EatingWindowSchedule.self,
+                EatingWindowOverride.self,
+                AppSettings.self,
+            ]
+
+            guard let mom = NSManagedObjectModel.makeManagedObjectModel(for: modelTypes) else {
+                logger.error("Failed to create NSManagedObjectModel for schema initialization")
+                return
+            }
+
+            let desc = NSPersistentStoreDescription(url: schemaInitURL)
+            desc.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
+                containerIdentifier: containerId
+            )
+            desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+
+            let cdContainer = NSPersistentCloudKitContainer(name: "SchemaInit", managedObjectModel: mom)
+            cdContainer.persistentStoreDescriptions = [desc]
+
+            cdContainer.loadPersistentStores { _, error in
+                if let error {
+                    logger.error("Schema init: failed to load store: \(error.localizedDescription)")
+                }
+            }
+
+            try cdContainer.initializeCloudKitSchema()
+            logger.info("✅ CloudKit schema initialized successfully")
+
+            // Clean up: remove the store so it doesn't hold file locks
+            if let store = cdContainer.persistentStoreCoordinator.persistentStores.first {
+                try cdContainer.persistentStoreCoordinator.remove(store)
+            }
+
+            // Remove the temporary files
+            let fm = FileManager.default
+            for suffix in ["", "-shm", "-wal"] {
+                let fileURL = schemaInitURL.appendingPathExtension(suffix.isEmpty ? "" : String(suffix.dropFirst()))
+                let path = suffix.isEmpty ? schemaInitURL.path : schemaInitURL.path + suffix
+                if fm.fileExists(atPath: path) {
+                    try? fm.removeItem(atPath: path)
+                }
+            }
+        } catch {
+            // Non-fatal: schema init is best-effort. The app still works without it,
+            // but some fields/relationships may not sync until data is written.
+            logger.error("Schema init failed (non-fatal): \(error.localizedDescription)")
         }
     }
 
@@ -67,6 +137,18 @@ enum AppModelContainerProvider {
                 )
                 let container = try ModelContainer(for: schema, configurations: [cloud])
                 logger.info("✅ CloudKit container created successfully")
+
+                // In DEBUG builds, force-register the full schema with CloudKit so that
+                // JIT inference doesn't miss fields or relationships that haven't been
+                // exercised yet. This prevents "some data syncs, some doesn't" issues.
+                #if DEBUG
+                initializeCloudKitSchemaIfNeeded(
+                    schema: schema,
+                    storeURL: cloudStoreURL,
+                    containerId: iCloudContainerId
+                )
+                #endif
+
                 return .success(container)
             } catch {
                 logger.error("❌ CloudKit SwiftData store failed; falling back to local-only store")

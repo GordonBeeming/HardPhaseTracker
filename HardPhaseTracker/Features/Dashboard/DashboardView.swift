@@ -143,7 +143,8 @@ struct DashboardView: View {
             }
         }
         .appScreen()
-        .task {
+        .task(id: health.permission) {
+            guard health.permission == .authorized else { return }
             guard !initialRefreshPerformed else { return }
             initialRefreshPerformed = true
             let maxDays = appSettings?.healthDataMaxPullDays ?? 90
@@ -206,21 +207,65 @@ private struct DashboardWeightTrendCardView: View {
                 }
             }
 
-            // Show weight loss info if we have first and latest weight
+            // Show weight loss info and body composition metrics
             if let first = health.firstWeight, let latest = health.latestWeight {
                 let lostKg = first.kilograms - latest.kilograms
                 if lostKg > 0 {
                     let duration = formatDuration(from: first.date, to: latest.date)
-                    let bodyFatText = health.latestBodyFat.map { String(format: " • Body fat %.1f%%", $0.percent) } ?? ""
-                    Text("Lost \(formatWeight(kilograms: lostKg)) in \(duration)\(bodyFatText)")
+                    Text("Lost \(formatWeight(kilograms: lostKg)) in \(duration)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            } else if let bf = health.latestBodyFat {
-                // Show body fat alone if no weight loss info
-                Text(String(format: "Body fat %.1f%%", bf.percent))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            }
+            
+            // Body composition metrics (body fat and muscle mass)
+            if health.latestBodyFat != nil || health.latestMuscleMass != nil {
+                HStack(spacing: 16) {
+                    // Body fat
+                    if let bf = health.latestBodyFat {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Body fat")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text(String(format: "%.1f%%", bf.percent))
+                                    .font(.subheadline)
+                                if let delta = calculateBodyFatDelta() {
+                                    Text(String(format: "(%@%.1f)", delta >= 0 ? "+" : "", delta))
+                                        .font(.caption)
+                                        .foregroundStyle(delta < 0 ? .green : .orange)
+                                }
+                            }
+                        }
+                    }
+
+                    // Muscle mass
+                    if let mm = health.latestMuscleMass {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Muscle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text(formatWeight(kilograms: mm.kilograms))
+                                    .font(.subheadline)
+                                if let delta = calculateMuscleMassDelta() {
+                                    Text(formatDelta(delta))
+                                        .font(.caption)
+                                        .foregroundStyle(delta > 0 ? .green : .orange)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer()
+                }
+
+                // Composition delta: break down weight change into fat vs muscle
+                if let compositionInsight = calculateCompositionDelta() {
+                    Text(compositionInsight)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             switch health.permission {
@@ -442,6 +487,53 @@ private struct DashboardWeightTrendCardView: View {
         return latest.kilograms - previous.kilograms
     }
     
+    private func calculateBodyFatDelta() -> Double? {
+        guard let latest = health.latestBodyFat else { return nil }
+        
+        let previous = health.allBodyFat
+            .filter { $0.date < latest.date }
+            .last
+        
+        guard let previous = previous else { return nil }
+        return latest.percent - previous.percent
+    }
+    
+    private func calculateMuscleMassDelta() -> Double? {
+        guard let latest = health.latestMuscleMass else { return nil }
+        
+        let previous = health.allMuscleMass
+            .filter { $0.date < latest.date }
+            .last
+        
+        guard let previous = previous else { return nil }
+        return latest.kilograms - previous.kilograms
+    }
+    
+    private func calculateCompositionDelta() -> String? {
+        guard let fatDelta = calculateBodyFatDelta(),
+              let muscleDelta = calculateMuscleMassDelta(),
+              let latestWeight = health.latestWeight else { return nil }
+
+        // Calculate approximate fat mass change using body fat % delta and current weight
+        let fatMassChangeKg = (fatDelta / 100.0) * latestWeight.kilograms
+
+        // Build an insight string
+        var parts: [String] = []
+
+        if abs(muscleDelta) >= 0.1 {
+            let sign = muscleDelta >= 0 ? "+" : ""
+            parts.append(String(format: "muscle %@%.1f kg", sign, muscleDelta))
+        }
+
+        if abs(fatMassChangeKg) >= 0.1 {
+            let sign = fatMassChangeKg >= 0 ? "+" : ""
+            parts.append(String(format: "fat %@%.1f kg", sign, fatMassChangeKg))
+        }
+
+        guard !parts.isEmpty else { return nil }
+        return "Composition: " + parts.joined(separator: ", ")
+    }
+
     private func formatDelta(_ deltaKg: Double) -> String {
         let sign = deltaKg >= 0 ? "+" : ""
         switch unitSystem {

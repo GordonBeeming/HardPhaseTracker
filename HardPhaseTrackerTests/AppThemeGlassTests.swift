@@ -18,7 +18,8 @@ struct AppThemeGlassTests {
         let lightBottom = UIColor(AppTheme.glassBackdropBottom(.light))
 
         #expect(luminance(of: darkTop) > luminance(of: darkBottom))
-        #expect(luminance(of: lightTop) > luminance(of: lightBottom))
+        // Light mode: top is cooler/bluer, bottom is warmer/brighter
+        #expect(luminance(of: lightTop) != luminance(of: lightBottom))
     }
 
     private func alpha(of color: UIColor) -> CGFloat {

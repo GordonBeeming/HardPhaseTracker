@@ -27,6 +27,7 @@ final class DataExportImportService {
         // Optional health data for testing purposes (not synced to HealthKit on import)
         let weightSamples: [WeightSample]?
         let bodyFatSamples: [BodyFatSample]?
+        let muscleMassSamples: [MuscleMassSample]?
         let sleepNights: [SleepNight]?
     }
     
@@ -246,10 +247,11 @@ final class DataExportImportService {
         // Gather health data if requested
         let weightSamples: [WeightSample]? = includeHealthData ? healthKitViewModel?.allWeights : nil
         let bodyFatSamples: [BodyFatSample]? = includeHealthData ? healthKitViewModel?.allBodyFat : nil
+        let muscleMassSamples: [MuscleMassSample]? = includeHealthData ? healthKitViewModel?.allMuscleMass : nil
         let sleepNights: [SleepNight]? = includeHealthData ? healthKitViewModel?.allSleepNights : nil
-        
+
         if includeHealthData {
-            logger.info("Including health data: \(weightSamples?.count ?? 0) weights, \(bodyFatSamples?.count ?? 0) body fat samples, \(sleepNights?.count ?? 0) sleep nights")
+            logger.info("Including health data: \(weightSamples?.count ?? 0) weights, \(bodyFatSamples?.count ?? 0) body fat, \(muscleMassSamples?.count ?? 0) muscle mass, \(sleepNights?.count ?? 0) sleep nights")
         }
         
         // Create export data
@@ -267,6 +269,7 @@ final class DataExportImportService {
             appSettings: exportedSettings,
             weightSamples: weightSamples,
             bodyFatSamples: bodyFatSamples,
+            muscleMassSamples: muscleMassSamples,
             sleepNights: sleepNights
         )
         
@@ -520,15 +523,16 @@ final class DataExportImportService {
         if let healthKitVM = healthKitViewModel {
             let weights = exportData.weightSamples
             let bodyFat = exportData.bodyFatSamples
+            let muscleMass = exportData.muscleMassSamples
             let sleepNights = exportData.sleepNights
-            
-            if weights != nil || bodyFat != nil || sleepNights != nil {
-                healthKitVM.restoreHealthData(weights: weights, bodyFat: bodyFat, sleepNights: sleepNights)
+
+            if weights != nil || bodyFat != nil || muscleMass != nil || sleepNights != nil {
+                healthKitVM.restoreHealthData(weights: weights, bodyFat: bodyFat, muscleMass: muscleMass, sleepNights: sleepNights)
                 weightsImported = weights?.count ?? 0
                 bodyFatImported = bodyFat?.count ?? 0
                 sleepNightsImported = sleepNights?.count ?? 0
                 healthDataImported = true
-                logger.info("Restored health data: \(weightsImported) weights, \(bodyFatImported) body fat, \(sleepNightsImported) sleep nights")
+                logger.info("Restored health data: \(weightsImported) weights, \(bodyFatImported) body fat, \(muscleMass?.count ?? 0) muscle mass, \(sleepNightsImported) sleep nights")
             }
         }
         

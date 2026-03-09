@@ -1,143 +1,185 @@
 import Foundation
+import CoreData
 import SwiftData
 import OSLog
 import Network
 
-/// Service to manage CloudKit sync behavior with SwiftData
+/// Service that monitors real CloudKit sync events from the underlying
+/// NSPersistentCloudKitContainer that SwiftData uses internally.
 @MainActor
 final class CloudKitSyncService: ObservableObject {
     private static let logger = Logger(subsystem: "HardPhaseTracker", category: "CloudKitSync")
-    
-    @Published private(set) var lastSyncAttempt: Date?
-    @Published private(set) var lastSuccessfulSync: Date?
+
+    // MARK: - Published state
+
+    @Published private(set) var lastImport: Date?
+    @Published private(set) var lastExport: Date?
     @Published private(set) var isOnline: Bool = true
     @Published private(set) var isSyncing: Bool = false
     @Published private(set) var syncError: String?
-    @Published private(set) var hasPendingChanges: Bool = false
-    
+
+    // MARK: - Private
+
     private let networkMonitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "com.gordonbeeming.HardPhaseTracker.networkMonitor")
-    
-    private static let lastSyncKey = "cloudkit.lastSyncAttempt"
-    private static let lastSuccessfulSyncKey = "cloudkit.lastSuccessfulSync"
-    
+    private var eventObserver: Any?
+
+    private static let lastImportKey = "cloudkit.lastImport"
+    private static let lastExportKey = "cloudkit.lastExport"
+
+    // MARK: - Init
+
     init() {
-        lastSyncAttempt = UserDefaults.standard.object(forKey: Self.lastSyncKey) as? Date
-        lastSuccessfulSync = UserDefaults.standard.object(forKey: Self.lastSuccessfulSyncKey) as? Date
+        lastImport = UserDefaults.standard.object(forKey: Self.lastImportKey) as? Date
+        lastExport = UserDefaults.standard.object(forKey: Self.lastExportKey) as? Date
         startNetworkMonitoring()
+        startObservingCloudKitEvents()
     }
-    
-    /// Attempts to trigger CloudKit sync by touching the data store
-    /// SwiftData will automatically sync when network is available
+
+    // MARK: - Real CloudKit event monitoring
+
+    /// Observes NSPersistentCloudKitContainer.eventChangedNotification which fires
+    /// for every import, export, and setup event — even when using SwiftData.
+    private func startObservingCloudKitEvents() {
+        eventObserver = NotificationCenter.default.addObserver(
+            forName: NSPersistentCloudKitContainer.eventChangedNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            guard let event = notification.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event else { return }
+
+            Task { @MainActor [weak self] in
+                self?.handleCloudKitEvent(event)
+            }
+        }
+    }
+
+    private func handleCloudKitEvent(_ event: NSPersistentCloudKitContainer.Event) {
+        let typeName: String
+        switch event.type {
+        case .import: typeName = "import"
+        case .export: typeName = "export"
+        case .setup:  typeName = "setup"
+        @unknown default: typeName = "unknown"
+        }
+
+        if event.endDate != nil {
+            // Event finished
+            if let error = event.error {
+                Self.logger.error("CloudKit \(typeName) failed: \(error.localizedDescription)")
+                syncError = "\(typeName) failed: \(error.localizedDescription)"
+            } else {
+                Self.logger.info("CloudKit \(typeName) succeeded")
+                syncError = nil
+
+                let now = Date()
+                switch event.type {
+                case .import:
+                    lastImport = now
+                    UserDefaults.standard.set(now, forKey: Self.lastImportKey)
+                case .export:
+                    lastExport = now
+                    UserDefaults.standard.set(now, forKey: Self.lastExportKey)
+                case .setup:
+                    break
+                @unknown default:
+                    break
+                }
+            }
+            isSyncing = false
+        } else {
+            // Event started
+            Self.logger.info("CloudKit \(typeName) started")
+            isSyncing = true
+            if syncError != nil {
+                // Clear previous error when a new sync starts
+                syncError = nil
+            }
+        }
+    }
+
+    // MARK: - Manual sync trigger
+
+    /// Saves the model context to encourage SwiftData to push changes to CloudKit.
+    /// The actual sync result will arrive via eventChangedNotification.
     func requestSync(modelContext: ModelContext) {
         guard isOnline else {
             Self.logger.info("Skipping sync request - device offline")
             syncError = "Device is offline"
             return
         }
-        
-        guard !isSyncing else {
-            Self.logger.info("Sync already in progress, skipping")
-            return
-        }
-        
-        Self.logger.info("Requesting CloudKit sync...")
-        
-        isSyncing = true
-        syncError = nil
-        
-        // SwiftData automatically syncs with CloudKit, but we can encourage it by:
-        // 1. Doing a save (even if nothing changed) - this triggers sync check
-        // 2. Fetching data (forces SwiftData to check for remote changes)
-        
+
+        Self.logger.info("Saving context to trigger CloudKit sync…")
         do {
-            // Save triggers CloudKit push
             try modelContext.save()
-            
-            lastSyncAttempt = Date()
-            lastSuccessfulSync = Date()
-            UserDefaults.standard.set(lastSyncAttempt, forKey: Self.lastSyncKey)
-            UserDefaults.standard.set(lastSuccessfulSync, forKey: Self.lastSuccessfulSyncKey)
-            
-            // Check if there are pending changes
-            hasPendingChanges = modelContext.hasChanges
-            
-            Self.logger.info("Sync request completed successfully")
-            isSyncing = false
         } catch {
-            Self.logger.error("Sync request failed: \(error.localizedDescription)")
-            syncError = error.localizedDescription
-            isSyncing = false
+            Self.logger.error("Context save failed: \(error.localizedDescription)")
+            syncError = "Save failed: \(error.localizedDescription)"
         }
     }
-    
-    /// Request sync only if it's been a while since last attempt
+
+    /// Request sync only if it's been a while since last activity
     func requestSyncIfStale(modelContext: ModelContext, staleAfterMinutes: Double = 5) {
         guard isOnline else { return }
-        guard !isSyncing else { return }
-        
+
         let now = Date()
-        if let last = lastSyncAttempt {
+        let lastActivity = [lastImport, lastExport].compactMap { $0 }.max()
+        if let last = lastActivity {
             let minutesAgo = now.timeIntervalSince(last) / 60
             if minutesAgo < staleAfterMinutes {
                 Self.logger.debug("Sync recent (< \(staleAfterMinutes) min ago), skipping")
                 return
             }
         }
-        
+
         requestSync(modelContext: modelContext)
     }
-    
-    /// Computed property for user-friendly sync status
+
+    // MARK: - Status
+
     var syncStatusMessage: String {
         if !isOnline {
-            return "Offline - sync paused"
+            return "Offline – sync paused"
         }
-        
+
         if isSyncing {
-            return "Syncing..."
+            return "Syncing…"
         }
-        
+
         if let error = syncError {
             return "Sync error: \(error)"
         }
-        
-        if hasPendingChanges {
-            return "Changes pending sync"
-        }
-        
-        if let lastSync = lastSuccessfulSync {
+
+        let lastActivity = [lastImport, lastExport].compactMap { $0 }.max()
+        if let last = lastActivity {
             let formatter = RelativeDateTimeFormatter()
             formatter.unitsStyle = .abbreviated
-            return "Last synced \(formatter.localizedString(for: lastSync, relativeTo: Date()))"
+            return "Last synced \(formatter.localizedString(for: last, relativeTo: Date()))"
         }
-        
-        return "Sync status unknown"
+
+        return "Waiting for first sync"
     }
-    
+
     var syncStatusColor: SyncStatusColor {
         if !isOnline || syncError != nil {
             return .error
         }
-        
         if isSyncing {
             return .syncing
         }
-        
-        if hasPendingChanges {
-            return .warning
-        }
-        
         return .success
     }
-    
+
     enum SyncStatusColor {
         case success
         case warning
         case error
         case syncing
     }
-    
+
+    // MARK: - Network
+
     private func startNetworkMonitoring() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
@@ -151,8 +193,11 @@ final class CloudKitSyncService: ObservableObject {
         }
         networkMonitor.start(queue: monitorQueue)
     }
-    
+
     deinit {
         networkMonitor.cancel()
+        if let observer = eventObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 }
